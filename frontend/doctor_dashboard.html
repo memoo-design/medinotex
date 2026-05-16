@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediNotex – Doctor Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'sans-serif'],
+            display: ['Syne', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50:  '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ── Base ── */
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; }
+
+    /* ── Sidebar ── */
+    #sidebar { transition: transform 0.3s cubic-bezier(.4,0,.2,1), width 0.3s ease; }
+    #sidebar.collapsed { width: 70px; }
+    #sidebar.collapsed .nav-label,
+    #sidebar.collapsed .sidebar-logo-text,
+    #sidebar.collapsed .sidebar-badge { display: none; }
+    #sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
+
+    /* ── Shimmer ── */
+    .shimmer {
+      background: linear-gradient(90deg, #f0f4ff 25%, #dbe9ff 50%, #f0f4ff 75%);
+      background-size: 400% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    .dark .shimmer {
+      background: linear-gradient(90deg, #1e293b 25%, #273549 50%, #1e293b 75%);
+      background-size: 400% 100%;
+    }
+    @keyframes shimmer { 0%{background-position:100% 50%} 100%{background-position:0% 50%} }
+
+    /* ── Card hover lift ── */
+    .card-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-lift:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -12px rgba(30,64,175,0.18); }
+
+    /* ── Fade-in ── */
+    .fade-in { animation: fadeIn 0.5s ease forwards; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── Stagger ── */
+    .stagger-1{animation-delay:0.05s}
+    .stagger-2{animation-delay:0.10s}
+    .stagger-3{animation-delay:0.15s}
+    .stagger-4{animation-delay:0.20s}
+    .stagger-5{animation-delay:0.25s}
+    .stagger-6{animation-delay:0.30s}
+
+    /* ── Upload drag ── */
+    #drop-zone.drag-over { border-color:#1e40af; background:#eff6ff; }
+    .dark #drop-zone.drag-over { background:#1e2d4a; }
+
+    /* ── Progress bar ── */
+    .progress-bar { transition: width 0.4s ease; }
+
+    /* ── Toast ── */
+    #toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+
+    /* ── Modal overlay ── */
+    .modal-overlay { backdrop-filter: blur(4px); }
+
+    /* ── Sidebar active ── */
+    .nav-item.active { background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff; box-shadow: 0 4px 14px -4px rgba(30,64,175,0.5); }
+    .nav-item.active svg { color: #93c5fd; }
+
+    /* ── Dark mode transitions ── */
+    body, #sidebar, header, .page-card { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+
+    /* ── Pulse dot ── */
+    .pulse-dot { animation: pulseDot 2s infinite; }
+    @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── AI Processing ── */
+    .ai-wave span {
+      display:inline-block; width:6px; height:6px; border-radius:50%; background:#1e40af; margin:0 2px;
+      animation: aiWave 1.4s infinite ease-in-out;
+    }
+    .ai-wave span:nth-child(1){animation-delay:0s}
+    .ai-wave span:nth-child(2){animation-delay:0.2s}
+    .ai-wave span:nth-child(3){animation-delay:0.4s}
+    .ai-wave span:nth-child(4){animation-delay:0.6s}
+    @keyframes aiWave { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1.2);opacity:1} }
+
+    /* ── Custom scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+    /* ── Ring chart ── */
+    .ring-chart { transform: rotate(-90deg); }
+
+    /* ── Page tabs ── */
+    .page-tab { cursor:pointer; transition: all 0.2s; }
+    .page-tab.active { background:#1e40af; color:#fff; }
+    .page-tab:not(.active):hover { background:#eff6ff; color:#1e40af; }
+    .dark .page-tab:not(.active):hover { background:#1e2d4a; }
+
+    /* ── Responsive ── */
+    @media(max-width:768px){
+      #sidebar { position:fixed; z-index:50; height:100vh; transform:translateX(-100%); }
+      #sidebar.mobile-open { transform:translateX(0); }
+      #main-content { margin-left:0 !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col shadow-sm fixed top-0 left-0 z-40">
+
+    <!-- Logo -->
+    <div class="h-16 flex items-center gap-3 px-5 border-b border-slate-100 dark:border-slate-700">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-700 to-brand-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <div class="sidebar-logo-text">
+        <p class="font-display font-700 text-brand-800 dark:text-brand-300 text-base leading-tight">MediNotex</p>
+        <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Clinical AI Platform</p>
+      </div>
+    </div>
+
+    <!-- Doctor Info -->
+    <div class="px-4 py-4 border-b border-slate-100 dark:border-slate-700 sidebar-logo-text">
+      <div class="flex items-center gap-3 bg-brand-50 dark:bg-slate-700 rounded-xl p-3">
+        <div class="relative">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=doctor&backgroundColor=b6e3f4" class="w-9 h-9 rounded-full ring-2 ring-brand-200 dark:ring-brand-700" alt="Doctor"/>
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white dark:border-slate-800 rounded-full pulse-dot"></span>
+        </div>
+        <div>
+          <p class="font-semibold text-sm text-slate-800 dark:text-slate-100">Dr. Sarah Chen</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Cardiologist · MD</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+      <!-- Main -->
+      <p class="text-xs font-600 text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 mb-2 sidebar-logo-text">Main</p>
+
+      <a href="#" onclick="showPage('dashboard')" data-page="dashboard" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </a>
+
+      <a href="#" onclick="showPage('patients')" data-page="patients" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span class="nav-label">Patients</span>
+        <span class="sidebar-badge ml-auto bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 text-xs font-600 px-2 py-0.5 rounded-full">248</span>
+      </a>
+
+      <a href="#" onclick="showPage('upload')" data-page="upload" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        <span class="nav-label">Upload Clinical Note</span>
+      </a>
+
+      <a href="#" onclick="showPage('summaries')" data-page="summaries" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        <span class="nav-label">AI Summaries</span>
+        <span class="sidebar-badge ml-auto bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-600 px-2 py-0.5 rounded-full">New</span>
+      </a>
+
+      <p class="text-xs font-600 text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 mt-4 mb-2 sidebar-logo-text">Clinical</p>
+
+      <a href="#" onclick="showPage('appointments')" data-page="appointments" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span class="nav-label">Appointments</span>
+      </a>
+
+      <a href="#" onclick="showPage('history')" data-page="history" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="nav-label">Medical History</span>
+      </a>
+
+      <a href="#" onclick="showPage('notifications')" data-page="notifications" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <span class="nav-label">Notifications</span>
+        <span class="sidebar-badge ml-auto bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-600 px-2 py-0.5 rounded-full">3</span>
+      </a>
+
+      <p class="text-xs font-600 text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 mt-4 mb-2 sidebar-logo-text">Account</p>
+
+      <a href="#" onclick="showPage('profile')" data-page="profile" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <span class="nav-label">Profile</span>
+      </a>
+
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span class="nav-label">Settings</span>
+      </a>
+    </nav>
+
+    <!-- Sidebar Footer / Collapse -->
+    <div class="p-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+      <button onclick="confirmLogout()" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors flex-1">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <span class="nav-label">Logout</span>
+      </button>
+      <button onclick="toggleSidebar()" class="ml-2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 transition-colors" title="Collapse sidebar">
+        <svg id="sidebar-collapse-icon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div id="mobile-overlay" class="fixed inset-0 bg-black/40 z-30 hidden" onclick="closeMobileSidebar()"></div>
+
+  <!-- ═══════════ MAIN CONTENT ═══════════ -->
+  <div id="main-content" class="flex-1 flex flex-col min-h-screen" style="margin-left:256px;">
+
+    <!-- ── Top Navbar ── -->
+    <header class="h-16 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-6 sticky top-0 z-20 shadow-sm">
+      <!-- Left: Hamburger + Breadcrumb -->
+      <div class="flex items-center gap-4">
+        <button onclick="openMobileSidebar()" class="md:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="hidden sm:flex items-center gap-2 text-sm">
+          <span class="text-slate-400 dark:text-slate-500">MediNotex</span>
+          <svg class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <span id="breadcrumb" class="font-semibold text-brand-700 dark:text-brand-400">Dashboard</span>
+        </div>
+      </div>
+
+      <!-- Center: Search -->
+      <div class="relative flex-1 max-w-md mx-6">
+        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input id="global-search" type="text" placeholder="Search patients, notes, diagnoses…" class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-all placeholder-slate-400 dark:placeholder-slate-500"/>
+      </div>
+
+      <!-- Right: Actions -->
+      <div class="flex items-center gap-2">
+        <!-- Dark mode toggle -->
+        <button onclick="toggleDarkMode()" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Toggle dark mode">
+          <svg id="dark-icon" class="w-5 h-5 text-slate-500 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          <svg id="light-icon" class="w-5 h-5 text-brand-400 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </button>
+
+        <!-- Notifications bell -->
+        <div class="relative">
+          <button onclick="toggleDropdown('notif-dropdown')" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>
+          </button>
+          <div id="notif-dropdown" class="hidden absolute right-0 top-12 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <p class="font-semibold text-sm">Notifications</p>
+              <span class="text-xs text-brand-600 dark:text-brand-400 cursor-pointer hover:underline">Mark all read</span>
+            </div>
+            <div class="max-h-72 overflow-y-auto">
+              <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-50 dark:border-slate-700/50 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707"/></svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium">AI Summary Ready</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Patient James Wilson note processed</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">2 min ago</p>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-50 dark:border-slate-700/50 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium">High Risk Flag</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Patient Maria Garcia — cardiac risk elevated</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">15 min ago</p>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium">Appointment Reminder</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">John Kim — tomorrow 9:00 AM</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">1 hr ago</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="px-4 py-3 bg-slate-50 dark:bg-slate-700/50">
+              <a href="#" onclick="showPage('notifications')" class="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline">View all notifications →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile dropdown -->
+        <div class="relative">
+          <button onclick="toggleDropdown('profile-dropdown')" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=doctor&backgroundColor=b6e3f4" class="w-7 h-7 rounded-full ring-2 ring-brand-200 dark:ring-brand-700" alt="Dr"/>
+            <span class="text-sm font-semibold hidden sm:block">Dr. Chen</span>
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="profile-dropdown" class="hidden absolute right-0 top-12 w-52 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+              <p class="font-semibold text-sm">Dr. Sarah Chen</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">sarah.chen@medinotex.io</p>
+            </div>
+            <div class="py-1">
+              <a href="#" onclick="showPage('profile')" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                My Profile</a>
+              <a href="#" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Settings</a>
+              <hr class="my-1 border-slate-100 dark:border-slate-700"/>
+              <a href="#" onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Pages ── -->
+    <main class="flex-1 p-6 overflow-auto">
+
+      <!-- ══════ PAGE: DASHBOARD ══════ -->
+      <div id="page-dashboard" class="page-section">
+
+        <!-- Welcome -->
+        <div class="mb-6 fade-in">
+          <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">Good morning, Dr. Chen <span class="text-2xl">👋</span></h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Here's what's happening with your patients today — <span id="current-date"></span></p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+          <!-- Total Patients -->
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in stagger-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-11 h-11 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
+                <svg class="w-6 h-6 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
+              <span class="text-xs font-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">+12%</span>
+            </div>
+            <p class="text-3xl font-display font-700 text-slate-800 dark:text-slate-100" data-target="248" data-count="true">0</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Total Patients</p>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div class="h-full bg-brand-500 rounded-full progress-bar" style="width:78%"></div>
+            </div>
+          </div>
+
+          <!-- Clinical Notes -->
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in stagger-2">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center">
+                <svg class="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </div>
+              <span class="text-xs font-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">+8%</span>
+            </div>
+            <p class="text-3xl font-display font-700 text-slate-800 dark:text-slate-100" data-target="1047" data-count="true">0</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Clinical Notes Uploaded</p>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div class="h-full bg-violet-500 rounded-full progress-bar" style="width:65%"></div>
+            </div>
+          </div>
+
+          <!-- AI Summaries -->
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in stagger-3">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              </div>
+              <span class="text-xs font-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">+24%</span>
+            </div>
+            <p class="text-3xl font-display font-700 text-slate-800 dark:text-slate-100" data-target="893" data-count="true">0</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">AI Summaries Generated</p>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full progress-bar" style="width:85%"></div>
+            </div>
+          </div>
+
+          <!-- Pending Reviews -->
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in stagger-4">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <span class="text-xs font-600 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-full">-3%</span>
+            </div>
+            <p class="text-3xl font-display font-700 text-slate-800 dark:text-slate-100" data-target="17" data-count="true">0</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Pending Reviews</p>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-500 rounded-full progress-bar" style="width:22%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Recent Patients -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden fade-in stagger-5">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold text-slate-800 dark:text-slate-100">Recent Patients</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Last 7 days consultations</p>
+              </div>
+              <button onclick="showPage('patients')" class="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline">View all →</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-700/50">
+                    <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">Patient</th>
+                    <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-3">Diagnosis</th>
+                    <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-3">Date</th>
+                    <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
+                    <td class="px-6 py-3.5 flex items-center gap-3">
+                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=james&backgroundColor=c0aede" class="w-8 h-8 rounded-full" alt=""/>
+                      <div><p class="text-sm font-medium text-slate-800 dark:text-slate-100">James Wilson</p><p class="text-xs text-slate-500">54 yrs · Male</p></div>
+                    </td>
+                    <td class="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">Hypertension</td>
+                    <td class="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">May 7, 2026</td>
+                    <td class="px-4 py-3.5"><span class="badge-success">AI Ready</span></td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
+                    <td class="px-6 py-3.5 flex items-center gap-3">
+                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=maria&backgroundColor=ffdfbf" class="w-8 h-8 rounded-full" alt=""/>
+                      <div><p class="text-sm font-medium text-slate-800 dark:text-slate-100">Maria Garcia</p><p class="text-xs text-slate-500">47 yrs · Female</p></div>
+                    </td>
+                    <td class="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">Cardiac Risk</td>
+                    <td class="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">May 7, 2026</td>
+                    <td class="px-4 py-3.5"><span class="badge-danger">High Risk</span></td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
+                    <td class="px-6 py-3.5 flex items-center gap-3">
+                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=john&backgroundColor=b6e3f4" class="w-8 h-8 rounded-full" alt=""/>
+                      <div><p class="text-sm font-medium text-slate-800 dark:text-slate-100">John Kim</p><p class="text-xs text-slate-500">62 yrs · Male</p></div>
+                    </td>
+                    <td class="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">Diabetes T2</td>
+                    <td class="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">May 6, 2026</td>
+                    <td class="px-4 py-3.5"><span class="badge-warning">Pending</span></td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
+                    <td class="px-6 py-3.5 flex items-center gap-3">
+                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=aisha&backgroundColor=d1d4f9" class="w-8 h-8 rounded-full" alt=""/>
+                      <div><p class="text-sm font-medium text-slate-800 dark:text-slate-100">Aisha Patel</p><p class="text-xs text-slate-500">38 yrs · Female</p></div>
+                    </td>
+                    <td class="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">Migraine</td>
+                    <td class="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">May 5, 2026</td>
+                    <td class="px-4 py-3.5"><span class="badge-success">AI Ready</span></td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
+                    <td class="px-6 py-3.5 flex items-center gap-3">
+                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=robert&backgroundColor=ffd5dc" class="w-8 h-8 rounded-full" alt=""/>
+                      <div><p class="text-sm font-medium text-slate-800 dark:text-slate-100">Robert Lee</p><p class="text-xs text-slate-500">71 yrs · Male</p></div>
+                    </td>
+                    <td class="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">COPD</td>
+                    <td class="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">May 5, 2026</td>
+                    <td class="px-4 py-3.5"><span class="badge-info">In Review</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Upcoming & Activity -->
+          <div class="space-y-5">
+            <!-- Today's schedule -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden fade-in stagger-6">
+              <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                <h3 class="font-semibold text-slate-800 dark:text-slate-100">Today's Schedule</h3>
+              </div>
+              <div class="p-4 space-y-3">
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-800">
+                  <div class="w-1 h-10 rounded-full bg-brand-500 flex-shrink-0"></div>
+                  <div class="flex-1">
+                    <p class="text-xs text-brand-600 dark:text-brand-400 font-600">9:00 AM</p>
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">John Kim</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Follow-up · Cardiology</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50">
+                  <div class="w-1 h-10 rounded-full bg-slate-300 dark:bg-slate-500 flex-shrink-0"></div>
+                  <div class="flex-1">
+                    <p class="text-xs text-slate-500 font-600">11:30 AM</p>
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Maria Garcia</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Consult · Echo results</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50">
+                  <div class="w-1 h-10 rounded-full bg-slate-300 dark:bg-slate-500 flex-shrink-0"></div>
+                  <div class="flex-1">
+                    <p class="text-xs text-slate-500 font-600">2:00 PM</p>
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">New Patient</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Initial eval · Referred</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Activity -->
+            <div class="bg-gradient-to-br from-brand-800 to-brand-600 rounded-2xl p-5 text-white shadow-lg fade-in stagger-6">
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                </div>
+                <p class="font-semibold">AI Engine Active</p>
+              </div>
+              <p class="text-sm text-brand-100 mb-4">3 notes queued for processing</p>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-brand-200">Processing speed</span>
+                  <span class="font-600">98.2%</span>
+                </div>
+                <div class="h-1.5 bg-white/20 rounded-full overflow-hidden">
+                  <div class="h-full bg-white rounded-full" style="width:98%"></div>
+                </div>
+              </div>
+              <button onclick="showPage('upload')" class="mt-4 w-full bg-white/20 hover:bg-white/30 text-white text-sm font-medium py-2 rounded-xl transition-colors">Upload New Note →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PAGE: PATIENTS ══════ -->
+      <div id="page-patients" class="page-section hidden">
+        <div class="mb-6 fade-in flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">Patient Management</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">248 active patients under your care</p>
+          </div>
+          <button onclick="openModal('add-patient-modal')" class="btn-primary flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Patient
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 mb-5 flex flex-wrap gap-3 items-center fade-in">
+          <div class="relative flex-1 min-w-52">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="patient-search" type="text" oninput="filterPatients()" placeholder="Search by name, diagnosis…" class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition-all"/>
+          </div>
+          <select class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition-all">
+            <option>All Status</option>
+            <option>AI Ready</option>
+            <option>Pending</option>
+            <option>High Risk</option>
+          </select>
+          <select class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition-all">
+            <option>All Departments</option>
+            <option>Cardiology</option>
+            <option>Neurology</option>
+            <option>Endocrinology</option>
+          </select>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden fade-in">
+          <div class="overflow-x-auto">
+            <table class="w-full" id="patient-table">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-700/50">
+                  <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-4">Patient</th>
+                  <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-4">Age/Sex</th>
+                  <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-4">Diagnosis</th>
+                  <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-4">Last Visit</th>
+                  <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-4">Notes</th>
+                  <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-4">Status</th>
+                  <th class="text-left text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider px-4 py-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="patient-tbody" class="divide-y divide-slate-50 dark:divide-slate-700/50">
+                <!-- Rows generated by JS -->
+              </tbody>
+            </table>
+          </div>
+          <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <p class="text-sm text-slate-500 dark:text-slate-400">Showing <span class="font-medium text-slate-700 dark:text-slate-200">1–10</span> of <span class="font-medium text-slate-700 dark:text-slate-200">248</span> patients</p>
+            <div class="flex items-center gap-2">
+              <button class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <button class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center text-sm font-medium">1</button>
+              <button class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">2</button>
+              <button class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">3</button>
+              <button class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PAGE: UPLOAD CLINICAL NOTE ══════ -->
+      <div id="page-upload" class="page-section hidden">
+        <div class="mb-6 fade-in">
+          <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">Upload Clinical Note</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Upload or type a clinical note to generate an AI-powered SOAP summary</p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          <!-- Left: Upload panel -->
+          <div class="xl:col-span-3 space-y-5">
+            <!-- Patient selection -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in">
+              <h3 class="font-semibold text-slate-800 dark:text-slate-100 mb-4">Patient Information</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-600 text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5">Select Patient</label>
+                  <select class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition-all">
+                    <option>James Wilson – #P001</option>
+                    <option>Maria Garcia – #P002</option>
+                    <option>John Kim – #P003</option>
+                    <option>Aisha Patel – #P004</option>
+                    <option>Robert Lee – #P005</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-600 text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5">Visit Type</label>
+                  <select class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition-all">
+                    <option>Initial Consultation</option>
+                    <option>Follow-Up</option>
+                    <option>Emergency</option>
+                    <option>Telehealth</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Drag & drop area -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in">
+              <h3 class="font-semibold text-slate-800 dark:text-slate-100 mb-4">Upload Document</h3>
+              <div id="drop-zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-all">
+                <div class="flex flex-col items-center gap-3">
+                  <div class="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
+                    <svg class="w-7 h-7 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Drag & drop files here</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">or <label class="text-brand-600 dark:text-brand-400 cursor-pointer hover:underline"><input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)" accept=".pdf,.docx,.txt"/>browse to upload</label></p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium">PDF</span>
+                    <span class="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium">DOCX</span>
+                    <span class="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium">TXT</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- File preview -->
+              <div id="file-preview" class="hidden mt-4 flex items-center gap-3 p-3 bg-brand-50 dark:bg-brand-900/20 rounded-xl border border-brand-100 dark:border-brand-800">
+                <div class="w-10 h-10 rounded-lg bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div class="flex-1">
+                  <p id="file-name" class="text-sm font-medium text-slate-800 dark:text-slate-100">filename.pdf</p>
+                  <p id="file-size" class="text-xs text-slate-500 dark:text-slate-400">2.4 MB</p>
+                </div>
+                <button onclick="removeFile()" class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                  <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Upload progress -->
+              <div id="upload-progress" class="hidden mt-4">
+                <div class="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mb-1.5">
+                  <span>Uploading…</span>
+                  <span id="upload-pct">0%</span>
+                </div>
+                <div class="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div id="upload-bar" class="h-full bg-brand-500 rounded-full progress-bar" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Text area -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-slate-100">Or Type Clinical Notes</h3>
+                <button onclick="startVoiceNote()" id="voice-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                  Voice Note
+                </button>
+              </div>
+              <textarea id="clinical-note-text" rows="10" placeholder="S: Patient presents with 3-day history of chest discomfort, shortness of breath on exertion. Denies palpitations or syncope. BP 148/92, HR 78.
+
+O: Cardiovascular examination reveals no murmurs. ECG shows sinus rhythm with LVH pattern…" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none transition-all font-mono"></textarea>
+              <div class="mt-2 flex items-center justify-between">
+                <p id="char-count" class="text-xs text-slate-400 dark:text-slate-500">0 characters</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">Min. 50 characters recommended</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Options panel -->
+          <div class="xl:col-span-2 space-y-5">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in">
+              <h3 class="font-semibold text-slate-800 dark:text-slate-100 mb-4">AI Processing Options</h3>
+              <div class="space-y-3">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"/>
+                  <div>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">SOAP Note Format</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Structured S/O/A/P output</p>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"/>
+                  <div>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Diagnosis Highlights</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Key findings and impressions</p>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"/>
+                  <div>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Treatment Recommendations</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">AI-suggested care plan</p>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"/>
+                  <div>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Risk Assessment</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Clinical risk scoring</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 fade-in">
+              <h3 class="font-semibold text-slate-800 dark:text-slate-100 mb-3">Model Selection</h3>
+              <div class="space-y-2">
+                <label class="flex items-center gap-3 p-3 rounded-xl border-2 border-brand-200 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/20 cursor-pointer">
+                  <input type="radio" name="model" checked class="text-brand-600 focus:ring-brand-500"/>
+                  <div>
+                    <p class="text-sm font-semibold text-brand-700 dark:text-brand-300">MediAI Pro</p>
+                    <p class="text-xs text-slate-500">Clinical specialist model</p>
+                  </div>
+                  <span class="ml-auto text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full font-medium">Recommended</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <input type="radio" name="model" class="text-brand-600 focus:ring-brand-500"/>
+                  <div>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">MediAI Standard</p>
+                    <p class="text-xs text-slate-500">General-purpose model</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Generate button -->
+            <button onclick="generateSummary()" id="generate-btn" class="btn-primary w-full py-4 text-base flex items-center justify-center gap-3 fade-in">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              Generate AI Summary
+            </button>
+
+            <!-- AI Processing animation -->
+            <div id="ai-processing" class="hidden bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-brand-200 dark:border-brand-700 text-center fade-in">
+              <div class="ai-wave flex items-center justify-center mb-3">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <p class="text-sm font-semibold text-brand-700 dark:text-brand-300">AI Processing Clinical Note…</p>
+              <p id="ai-status-msg" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Parsing clinical content</p>
+              <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div id="ai-progress-bar" class="h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full progress-bar" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PAGE: AI SUMMARIES ══════ -->
+      <div id="page-summaries" class="page-section hidden">
+        <div class="mb-6 fade-in flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">AI Summaries</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">AI-generated SOAP summaries and clinical insights</p>
+          </div>
+          <button onclick="showPage('upload')" class="btn-primary flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New Summary
+          </button>
+        </div>
+
+        <!-- Sample AI Summary Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-5 fade-in">
+          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center">
+                <svg class="w-5 h-5 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707"/></svg>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 dark:text-slate-100">James Wilson — AI SOAP Summary</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Generated May 7, 2026 · 10:42 AM · MediAI Pro</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge-success">Completed</span>
+              <button onclick="showToast('Report downloaded successfully!','success')" class="btn-outline flex items-center gap-2 text-xs">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Download
+              </button>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <!-- SOAP Tabs -->
+            <div class="flex gap-2 mb-5 flex-wrap">
+              <button onclick="switchTab('soap','S')" class="page-tab active px-4 py-2 rounded-xl text-xs font-600 uppercase tracking-wider border border-slate-200 dark:border-slate-600 transition-all">Subjective (S)</button>
+              <button onclick="switchTab('soap','O')" class="page-tab px-4 py-2 rounded-xl text-xs font-600 uppercase tracking-wider border border-slate-200 dark:border-slate-600 transition-all">Objective (O)</button>
+              <button onclick="switchTab('soap','A')" class="page-tab px-4 py-2 rounded-xl text-xs font-600 uppercase tracking-wider border border-slate-200 dark:border-slate-600 transition-all">Assessment (A)</button>
+              <button onclick="switchTab('soap','P')" class="page-tab px-4 py-2 rounded-xl text-xs font-600 uppercase tracking-wider border border-slate-200 dark:border-slate-600 transition-all">Plan (P)</button>
+            </div>
+
+            <!-- SOAP Content -->
+            <div id="soap-S" class="soap-content">
+              <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                <p>Patient James Wilson, 54-year-old male, presents with a <strong>3-day history of exertional chest discomfort</strong> described as pressure-like, 6/10 intensity, radiating to the left shoulder. Associated with mild dyspnea on climbing stairs. No palpitations, syncope, or diaphoresis. Denies fever, cough, or recent URTI. PMH: Hypertension (diagnosed 2019), Dyslipidemia. Medications: Amlodipine 5mg OD, Rosuvastatin 20mg OD. Social: Non-smoker, occasional alcohol, sedentary lifestyle. Family history: Father with MI at 58.</p>
+              </div>
+            </div>
+            <div id="soap-O" class="soap-content hidden">
+              <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                <p><strong>Vitals:</strong> BP 148/92 mmHg (bilateral), HR 78 bpm regular, RR 16, SpO₂ 97% RA, Temp 36.8°C, Weight 89kg, BMI 29.4.</p>
+                <p class="mt-2"><strong>CVS:</strong> JVP not elevated, apex non-displaced, S1/S2 audible, no murmurs or additional heart sounds.</p>
+                <p class="mt-2"><strong>ECG:</strong> Sinus rhythm, LVH by voltage criteria, no ST changes or Q waves.</p>
+                <p class="mt-2"><strong>Labs:</strong> Troponin I: 0.02 ng/mL (negative), CK-MB normal, Total cholesterol 5.8 mmol/L, LDL 3.6 mmol/L, HbA1c 5.8%.</p>
+              </div>
+            </div>
+            <div id="soap-A" class="soap-content hidden">
+              <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                <p><strong>Primary Impression:</strong> Stable Angina — exertional chest pain in a patient with known hypertension, dyslipidemia, and LVH. ACS currently not supported (troponin negative).</p>
+                <p class="mt-2"><strong>Secondary Impressions:</strong></p>
+                <ul class="list-disc list-inside mt-1 space-y-1 text-slate-600 dark:text-slate-300">
+                  <li>Hypertension — inadequately controlled (BP 148/92)</li>
+                  <li>Dyslipidemia — LDL above target</li>
+                  <li>Pre-diabetes (HbA1c 5.8%)</li>
+                </ul>
+                <!-- Risk indicators -->
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl p-3 text-center">
+                    <p class="text-xs text-red-600 dark:text-red-400 font-600 uppercase tracking-wider">Cardiac Risk</p>
+                    <p class="text-2xl font-display font-700 text-red-600 dark:text-red-400 mt-1">HIGH</p>
+                    <p class="text-xs text-red-500 dark:text-red-400 mt-1">ASCVD 10yr: ~18%</p>
+                  </div>
+                  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl p-3 text-center">
+                    <p class="text-xs text-amber-600 dark:text-amber-400 font-600 uppercase tracking-wider">BP Control</p>
+                    <p class="text-2xl font-display font-700 text-amber-600 dark:text-amber-400 mt-1">POOR</p>
+                    <p class="text-xs text-amber-500 dark:text-amber-400 mt-1">Target &lt;130/80</p>
+                  </div>
+                  <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3 text-center">
+                    <p class="text-xs text-emerald-600 dark:text-emerald-400 font-600 uppercase tracking-wider">Troponin</p>
+                    <p class="text-2xl font-display font-700 text-emerald-600 dark:text-emerald-400 mt-1">NEG</p>
+                    <p class="text-xs text-emerald-500 dark:text-emerald-400 mt-1">ACS unlikely</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="soap-P" class="soap-content hidden">
+              <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                <p><strong>Management Plan:</strong></p>
+                <ul class="list-disc list-inside mt-2 space-y-2 text-slate-600 dark:text-slate-300">
+                  <li>Refer to Cardiology for stress ECG / coronary CTA to rule out obstructive CAD</li>
+                  <li>Optimize antihypertensive therapy — consider adding ACE inhibitor (Ramipril 5mg OD)</li>
+                  <li>Increase Rosuvastatin to 40mg OD; target LDL &lt;1.8 mmol/L</li>
+                  <li>GTN spray prescribed for acute anginal episodes</li>
+                  <li>Lifestyle counselling: weight loss, aerobic exercise (supervised), dietary salt restriction</li>
+                  <li>Repeat HbA1c in 3 months; diabetes prevention counselling initiated</li>
+                  <li>Follow-up in 2 weeks or earlier if symptoms worsen</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- More summary cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 fade-in">
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=aisha&backgroundColor=d1d4f9" class="w-8 h-8 rounded-full" alt=""/>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Aisha Patel</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">May 5, 2026</p>
+                </div>
+              </div>
+              <span class="badge-success">AI Ready</span>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">Chronic migraine with aura, frequency 8–10/month. Sumatriptan prescribed. Preventive therapy with Topiramate 25mg initiated. Neurology referral for MRI brain to rule out secondary causes…</p>
+            <button onclick="showToast('Expanding summary…','info')" class="mt-3 text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline">View Full Summary →</button>
+          </div>
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=robert&backgroundColor=ffd5dc" class="w-8 h-8 rounded-full" alt=""/>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Robert Lee</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">May 5, 2026</p>
+                </div>
+              </div>
+              <span class="badge-info">In Review</span>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">COPD exacerbation, moderate severity (GOLD 3). Prednisolone course prescribed. Salbutamol and Ipratropium nebulization initiated. Chest X-ray shows hyperinflation without consolidation…</p>
+            <button onclick="showToast('Expanding summary…','info')" class="mt-3 text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline">View Full Summary →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PAGE: APPOINTMENTS ══════ -->
+      <div id="page-appointments" class="page-section hidden">
+        <div class="mb-6 fade-in flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">Appointments</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your clinical schedule</p>
+          </div>
+          <button onclick="showToast('Opening appointment scheduler…','info')" class="btn-primary flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Schedule Appointment
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 fade-in">
+          <!-- Appointment cards -->
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-brand-200 dark:border-brand-700">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-600 text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-3 py-1 rounded-full">Today 9:00 AM</span>
+              <span class="badge-success">Confirmed</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=john&backgroundColor=b6e3f4" class="w-10 h-10 rounded-full ring-2 ring-brand-200" alt=""/>
+              <div>
+                <p class="font-semibold text-slate-800 dark:text-slate-100">John Kim</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Follow-up · Cardiology</p>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2">
+              <button onclick="showToast('Opening patient file…','info')" class="btn-outline text-xs flex-1">View Notes</button>
+              <button onclick="showToast('Opening virtual consult…','info')" class="btn-primary text-xs flex-1">Start Consult</button>
+            </div>
+          </div>
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-600 text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">Today 11:30 AM</span>
+              <span class="badge-warning">Pending</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=maria&backgroundColor=ffdfbf" class="w-10 h-10 rounded-full ring-2 ring-slate-200 dark:ring-slate-600" alt=""/>
+              <div>
+                <p class="font-semibold text-slate-800 dark:text-slate-100">Maria Garcia</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Echo results review</p>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2">
+              <button onclick="showToast('Opening patient file…','info')" class="btn-outline text-xs flex-1">View Notes</button>
+              <button onclick="showToast('Confirming appointment…','success')" class="btn-primary text-xs flex-1">Confirm</button>
+            </div>
+          </div>
+          <div class="card-lift bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-600 text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">Tomorrow 9:00 AM</span>
+              <span class="badge-info">Scheduled</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=aisha&backgroundColor=d1d4f9" class="w-10 h-10 rounded-full ring-2 ring-slate-200 dark:ring-slate-600" alt=""/>
+              <div>
+                <p class="font-semibold text-slate-800 dark:text-slate-100">Aisha Patel</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Migraine follow-up</p>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2">
+              <button onclick="showToast('Opening patient file…','info')" class="btn-outline text-xs flex-1">View Notes</button>
+              <button onclick="showToast('Rescheduling…','info')" class="btn-outline text-xs flex-1">Reschedule</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PAGE: MEDICAL HISTORY ══════ -->
+      <div id="page-history" class="page-section hidden">
+        <div class="mb-6 fade-in flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">Medical History</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Complete patient medical timeline</p>
+          </div>
+          <div class="relative">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" placeholder="Search patient history…" class="pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition-all"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Patient selector -->
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden fade-in">
+            <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+              <h3 class="font-semibold text-slate-800 dark:text-slate-100 text-sm">Select Patient</h3>
+            </div>
+            <div class="divide-y divide-slate-50 dark:divide-slate-700/50">
+              <button onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('bg-brand-50','dark:bg-brand-900/20','border-l-4','border-brand-500'));this.classList.add('bg-brand-50','dark:bg-brand-900/20','border-l-4','border-brand-500')" class="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left bg-brand-50 dark:bg-brand-900/20 border-l-4 border-brand-500">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=james&backgroundColor=c0aede" class="w-9 h-9 rounded-full" alt=""/>
+                <div><p class="text-sm font-semibold text-slate-800 dark:text-slate-100">James Wilson</p><p class="text-xs text-slate-500">54 yrs · Hypertension</p></div>
+              </button>
+              <button onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('bg-brand-50','dark:bg-brand-900/20','border-l-4','border-brand-500'));this.classList.add('bg-brand-50','dark:bg-brand-900/20','border-l-4','border-brand-500')" class="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=maria&backgroundColor=ffdfbf" class="w-9 h-9 rounded-full" alt=""/>
+                <div><p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Maria Garcia</p><p class="text-xs text-slate-500">47 yrs · Cardiac Risk</p></div>
+              </button>
+              <button onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('bg-brand-50','dark:bg-brand-900/20','border-l-4','border-brand-500'));this.classList.add('bg-brand-50','dark:bg-brand-900/20','border-l-4','border-brand-500')" class="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=john&backgroundColor=b6e3f4" class="w-9 h-9 rounded-full" alt=""/>
+                <div><p class="text-sm font-semibold text-slate-800 dark:text-slate-100">John Kim</p><p class="text-xs text-slate-500">62 yrs · Diabetes T2</p></div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden fade-in">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold text-slate-800 dark:text-slate-100">James Wilson — Medical Timeline</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Patient ID: #P001 · DOB: March 12, 1972</p>
+              </div>
+              <span class="badge-danger">High Risk</span>
+            </div>
+            <div class="p-6 space-y-5 relative before:absolute before:left-10 before:top-8 before:bottom-8 before:w-px before:bg-slate-100 dark:before:bg-slate-700">
+              <!-- Timeline items -->
+              <div class="flex gap-4 relative">
+                <div class="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-800">
+                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4"/></svg>
+                </div>
+                <div class="flex-1 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Cardiology Consultation</p>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">May 7, 2026</span>
+                  </div>
+                  <p class="text-xs text-slate-600 dark:text-slate-300">Exertional chest pain evaluation. ECG: LVH. Troponin negative. Stress test ordered. Started GTN spray.</p>
+                  <span class="badge-success mt-2 inline-block">AI Summary Ready</span>
+                </div>
+              </div>
+              <div class="flex gap-4 relative">
+                <div class="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-800">
+                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01"/></svg>
+                </div>
+                <div class="flex-1 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">BP Review & Medication Adjustment</p>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">Feb 10, 2026</span>
+                  </div>
+                  <p class="text-xs text-slate-600 dark:text-slate-300">BP persistently elevated 150–160/90–95. Amlodipine dose increased. Dietary counseling given.</p>
+                  <span class="badge-warning mt-2 inline-block">Medication Changed</span>
+                </div>
+              </div>
+              <div class="flex gap-4 relative">
+                <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-800">
+                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4"/></svg>
+                </div>
+                <div class="flex-1 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Annual Health Screening</p>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">Nov 3, 2025</span>
+                  </div>
+                  <p class="text-xs text-slate-600 dark:text-slate-300">Comprehensive metabolic panel, lipid screen. LDL elevated. Rosuvastatin initiated.</p>
+                  <span class="badge-info mt-2 inline-block">Labs Ordered</span>
+                </div>
+              </div>
+              <div class="flex gap-4 relative">
+                <div class="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-800">
+                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                </div>
+                <div class="flex-1 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Hypertension Diagnosis</p>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">Aug 14, 2019</span>
+                  </div>
+                  <p class="text-xs text-slate-600 dark:text-slate-300">Initial diagnosis. BP 158/96 on repeated measurement. Lifestyle modification initiated. Amlodipine 5mg started.</p>
+                  <span class="badge-info mt-2 inline-block">New Diagnosis</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PAGE: NOTIFICATIONS ══════ -->
+      <div id="page-notifications" class="page-section hidden">
+        <div class="mb-6 fade-in">
+          <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">Notifications</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">System alerts and clinical updates</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden fade-in">
+          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <p class="font-semibold text-slate-800 dark:text-slate-100">All Notifications</p>
+            <button onclick="showToast('All notifications marked as read','success')" class="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline">Mark all as read</button>
+          </div>
+          <div class="divide-y divide-slate-50 dark:divide-slate-700/50">
+            <div class="flex items-start gap-4 p-5 bg-brand-50/50 dark:bg-brand-900/10">
+              <div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">AI Summary Ready — James Wilson</p>
+                <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">The AI has completed generating the clinical SOAP summary for James Wilson's May 7 consultation. Ready for your review.</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">2 minutes ago</p>
+              </div>
+              <span class="w-2 h-2 bg-brand-500 rounded-full flex-shrink-0 mt-2"></span>
+            </div>
+            <div class="flex items-start gap-4 p-5 bg-red-50/50 dark:bg-red-900/10">
+              <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">⚠ High Risk Alert — Maria Garcia</p>
+                <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">AI risk engine flagged elevated cardiac risk based on latest clinical note. ASCVD 10-year score elevated to 22%. Immediate review recommended.</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">15 minutes ago</p>
+              </div>
+              <span class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 mt-2"></span>
+            </div>
+            <div class="flex items-start gap-4 p-5">
+              <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Appointment Reminder — John Kim</p>
+                <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Upcoming appointment tomorrow at 9:00 AM. Patient John Kim — Cardiology follow-up.</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">1 hour ago</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4 p-5">
+              <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">System Update v3.2.1</p>
+                <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">MediNotex has been updated with improved AI accuracy (98.2%) and new SOAP note templates for Cardiology.</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">3 hours ago</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PAGE: PROFILE ══════ -->
+      <div id="page-profile" class="page-section hidden">
+        <div class="mb-6 fade-in">
+          <h1 class="font-display text-2xl font-700 text-slate-800 dark:text-slate-100">My Profile</h1>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 text-center fade-in">
+            <div class="relative inline-block mb-4">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=doctor&backgroundColor=b6e3f4" class="w-24 h-24 rounded-2xl ring-4 ring-brand-100 dark:ring-brand-800" alt=""/>
+              <button class="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center shadow-lg hover:bg-brand-600 transition-colors">
+                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              </button>
+            </div>
+            <h2 class="font-display font-700 text-xl text-slate-800 dark:text-slate-100">Dr. Sarah Chen</h2>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Cardiologist · MD, FACC</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">License #MD-2019-CARD-4821</p>
+            <div class="mt-4 flex justify-center gap-3">
+              <div class="text-center">
+                <p class="font-bold text-slate-800 dark:text-slate-100">248</p>
+                <p class="text-xs text-slate-500">Patients</p>
+              </div>
+              <div class="w-px bg-slate-100 dark:bg-slate-700"></div>
+              <div class="text-center">
+                <p class="font-bold text-slate-800 dark:text-slate-100">893</p>
+                <p class="text-xs text-slate-500">Summaries</p>
+              </div>
+              <div class="w-px bg-slate-100 dark:bg-slate-700"></div>
+              <div class="text-center">
+                <p class="font-bold text-slate-800 dark:text-slate-100">7yr</p>
+                <p class="text-xs text-slate-500">Experience</p>
+              </div>
+            </div>
+          </div>
+          <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 fade-in">
+            <h3 class="font-semibold text-slate-800 dark:text-slate-100 mb-5">Professional Information</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Full Name</label>
+                <input value="Dr. Sarah Chen" class="input-field"/>
+              </div>
+              <div>
+                <label class="block text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Specialization</label>
+                <input value="Cardiology" class="input-field"/>
+              </div>
+              <div>
+                <label class="block text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
+                <input value="sarah.chen@medinotex.io" class="input-field"/>
+              </div>
+              <div>
+                <label class="block text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Phone</label>
+                <input value="+1 (555) 312-8901" class="input-field"/>
+              </div>
+              <div>
+                <label class="block text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Hospital / Clinic</label>
+                <input value="City Medical Center" class="input-field"/>
+              </div>
+              <div>
+                <label class="block text-xs font-600 text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Department</label>
+                <input value="Cardiovascular Medicine" class="input-field"/>
+              </div>
+            </div>
+            <div class="mt-5 flex gap-3">
+              <button onclick="showToast('Profile saved successfully!','success')" class="btn-primary">Save Changes</button>
+              <button class="btn-outline">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ═══════════ MODALS ═══════════ -->
+
+  <!-- Logout confirmation -->
+  <div id="logout-modal" class="fixed inset-0 z-50 hidden modal-overlay bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm fade-in">
+      <div class="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 text-center">Sign Out?</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 text-center mt-2">You'll need to sign in again to access MediNotex.</p>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeModal('logout-modal')" class="btn-outline flex-1">Cancel</button>
+        <button onclick="showToast('Signed out successfully','success');closeModal('logout-modal')" class="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition-colors">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Patient modal -->
+  <div id="add-patient-modal" class="fixed inset-0 z-50 hidden modal-overlay bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-lg fade-in">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Add New Patient</h3>
+        <button onclick="closeModal('add-patient-modal')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-600 text-slate-500 uppercase tracking-wider mb-1.5">First Name</label>
+          <input placeholder="John" class="input-field"/>
+        </div>
+        <div>
+          <label class="block text-xs font-600 text-slate-500 uppercase tracking-wider mb-1.5">Last Name</label>
+          <input placeholder="Smith" class="input-field"/>
+        </div>
+        <div>
+          <label class="block text-xs font-600 text-slate-500 uppercase tracking-wider mb-1.5">Date of Birth</label>
+          <input type="date" class="input-field"/>
+        </div>
+        <div>
+          <label class="block text-xs font-600 text-slate-500 uppercase tracking-wider mb-1.5">Gender</label>
+          <select class="input-field"><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-600 text-slate-500 uppercase tracking-wider mb-1.5">Primary Diagnosis</label>
+          <input placeholder="e.g. Hypertension, Diabetes…" class="input-field"/>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-600 text-slate-500 uppercase tracking-wider mb-1.5">Contact Number</label>
+          <input placeholder="+1 (555) 000-0000" class="input-field"/>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeModal('add-patient-modal')" class="btn-outline flex-1">Cancel</button>
+        <button onclick="showToast('Patient added successfully!','success');closeModal('add-patient-modal')" class="btn-primary flex-1">Add Patient</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- ═══════════ SHARED CSS CLASSES via style tag ═══════════ -->
+  <style>
+    .btn-primary { background: linear-gradient(135deg, #1e40af, #2563eb); color:#fff; font-size:0.875rem; font-weight:600; padding:0.625rem 1.25rem; border-radius:0.75rem; transition: all 0.2s; border:none; cursor:pointer; }
+    .btn-primary:hover { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); box-shadow: 0 4px 14px -4px rgba(30,64,175,0.5); transform:translateY(-1px); }
+    .btn-outline { background:transparent; color:#475569; font-size:0.875rem; font-weight:500; padding:0.625rem 1.25rem; border-radius:0.75rem; transition: all 0.2s; border:1.5px solid #e2e8f0; cursor:pointer; }
+    .btn-outline:hover { background:#f8fafc; border-color:#cbd5e1; }
+    .dark .btn-outline { color:#94a3b8; border-color:#334155; }
+    .dark .btn-outline:hover { background:#1e293b; }
+    .input-field { width:100%; padding:0.625rem 0.875rem; border-radius:0.75rem; border:1.5px solid #e2e8f0; background:#f8fafc; font-size:0.875rem; transition:all 0.2s; outline:none; color:#1e293b; }
+    .input-field:focus { border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,0.3); }
+    .dark .input-field { background:#1e293b; border-color:#334155; color:#e2e8f0; }
+    .dark .input-field:focus { border-color:#3b82f6; }
+    .badge-success { display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; background:#dcfce7; color:#15803d; }
+    .badge-warning { display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; background:#fef9c3; color:#854d0e; }
+    .badge-danger  { display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; background:#fee2e2; color:#991b1b; }
+    .badge-info    { display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; background:#dbeafe; color:#1e40af; }
+    .dark .badge-success { background:#14532d; color:#86efac; }
+    .dark .badge-warning { background:#422006; color:#fde047; }
+    .dark .badge-danger  { background:#7f1d1d; color:#fca5a5; }
+    .dark .badge-info    { background:#1e3a8a; color:#93c5fd; }
+  </style>
+
+  <!-- ═══════════ JAVASCRIPT ═══════════ -->
+  <script>
+    // ── Dark mode ──
+    function initDarkMode() {
+      const saved = localStorage.getItem('medinotex-dark');
+      if (saved === 'true' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    }
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('medinotex-dark', isDark);
+    }
+    initDarkMode();
+
+    // ── Sidebar collapse ──
+    let sidebarCollapsed = false;
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const mc = document.getElementById('main-content');
+      sidebarCollapsed = !sidebarCollapsed;
+      if (sidebarCollapsed) {
+        sb.classList.add('collapsed');
+        mc.style.marginLeft = '70px';
+      } else {
+        sb.classList.remove('collapsed');
+        mc.style.marginLeft = '256px';
+      }
+    }
+    function openMobileSidebar() {
+      document.getElementById('sidebar').classList.add('mobile-open');
+      document.getElementById('mobile-overlay').classList.remove('hidden');
+    }
+    function closeMobileSidebar() {
+      document.getElementById('sidebar').classList.remove('mobile-open');
+      document.getElementById('mobile-overlay').classList.add('hidden');
+    }
+
+    // ── Dropdown toggle ──
+    function toggleDropdown(id) {
+      document.querySelectorAll('[id$="-dropdown"]').forEach(d => {
+        if (d.id !== id) d.classList.add('hidden');
+      });
+      document.getElementById(id).classList.toggle('hidden');
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('[onclick*="toggleDropdown"]') && !e.target.closest('[id$="-dropdown"]')) {
+        document.querySelectorAll('[id$="-dropdown"]').forEach(d => d.classList.add('hidden'));
+      }
+    });
+
+    // ── Pages ──
+    const pageMeta = {
+      dashboard: 'Dashboard', patients: 'Patients', upload: 'Upload Clinical Note',
+      summaries: 'AI Summaries', appointments: 'Appointments', history: 'Medical History',
+      notifications: 'Notifications', profile: 'My Profile'
+    };
+    function showPage(name) {
+      // Hide all
+      document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
+      // Show target
+      const pg = document.getElementById('page-' + name);
+      if (pg) { pg.classList.remove('hidden'); pg.classList.add('fade-in'); }
+      // Breadcrumb
+      document.getElementById('breadcrumb').textContent = pageMeta[name] || name;
+      // Nav active
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const active = document.querySelector(`[data-page="${name}"]`);
+      if (active) active.classList.add('active');
+      // Close mobile
+      closeMobileSidebar();
+      // Close dropdowns
+      document.querySelectorAll('[id$="-dropdown"]').forEach(d => d.classList.add('hidden'));
+      // Scroll to top
+      document.querySelector('main').scrollTop = 0;
+    }
+
+    // ── Modal ──
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function confirmLogout() { openModal('logout-modal'); }
+    // Close on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.addEventListener('click', function(e) {
+        if (e.target === m) closeModal(m.id);
+      });
+    });
+
+    // ── Toast ──
+    function showToast(msg, type = 'info', duration = 3500) {
+      const colors = {
+        success: 'bg-emerald-500', danger: 'bg-red-500', warning: 'bg-amber-500', info: 'bg-brand-600'
+      };
+      const icons = {
+        success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>',
+        danger:  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>',
+        warning: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01"/>',
+        info:    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01"/>'
+      };
+      const t = document.createElement('div');
+      t.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${colors[type] || colors.info} fade-in max-w-xs`;
+      t.innerHTML = `<svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">${icons[type]||icons.info}</svg><span>${msg}</span>`;
+      document.getElementById('toast-container').appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(20px)'; t.style.transition = 'all 0.3s'; setTimeout(() => t.remove(), 350); }, duration);
+    }
+
+    // ── Counters ──
+    function animateCounters() {
+      document.querySelectorAll('[data-count="true"]').forEach(el => {
+        const target = parseInt(el.dataset.target);
+        const step = Math.ceil(target / 60);
+        let current = 0;
+        const timer = setInterval(() => {
+          current = Math.min(current + step, target);
+          el.textContent = current.toLocaleString();
+          if (current >= target) clearInterval(timer);
+        }, 20);
+      });
+    }
+
+    // ── Date ──
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    // ── Patient table ──
+    const patientsData = [
+      { name:'James Wilson',  age:54, sex:'M', dx:'Hypertension',    date:'May 7, 2026',  notes:12, status:'AI Ready',  avatar:'james',  bg:'c0aede' },
+      { name:'Maria Garcia',  age:47, sex:'F', dx:'Cardiac Risk',    date:'May 7, 2026',  notes:8,  status:'High Risk', avatar:'maria',  bg:'ffdfbf' },
+      { name:'John Kim',      age:62, sex:'M', dx:'Diabetes T2',     date:'May 6, 2026',  notes:15, status:'Pending',   avatar:'john',   bg:'b6e3f4' },
+      { name:'Aisha Patel',   age:38, sex:'F', dx:'Migraine',        date:'May 5, 2026',  notes:6,  status:'AI Ready',  avatar:'aisha',  bg:'d1d4f9' },
+      { name:'Robert Lee',    age:71, sex:'M', dx:'COPD',            date:'May 5, 2026',  notes:20, status:'In Review', avatar:'robert', bg:'ffd5dc' },
+      { name:'Emily Chen',    age:29, sex:'F', dx:'Anxiety',         date:'May 4, 2026',  notes:4,  status:'Pending',   avatar:'emily',  bg:'c0e8d5' },
+      { name:'David Park',    age:55, sex:'M', dx:'Atrial Fibrillation', date:'May 3, 2026', notes:9, status:'AI Ready', avatar:'david', bg:'ffd5e5' },
+      { name:'Fatima Hassan', age:43, sex:'F', dx:'Hypothyroidism',  date:'May 2, 2026',  notes:7,  status:'AI Ready',  avatar:'fatima', bg:'ffe4c4' },
+      { name:'Carlos Ruiz',   age:67, sex:'M', dx:'Heart Failure',   date:'May 1, 2026',  notes:18, status:'High Risk', avatar:'carlos', bg:'b5d8ff' },
+      { name:'Linda Wang',    age:51, sex:'F', dx:'Osteoporosis',    date:'Apr 30, 2026', notes:5,  status:'In Review', avatar:'linda',  bg:'e8d5f5' },
+    ];
+    const statusBadge = s => ({ 'AI Ready':'badge-success', 'High Risk':'badge-danger', 'Pending':'badge-warning', 'In Review':'badge-info' }[s] || 'badge-info');
+    function renderPatients(data) {
+      const tbody = document.getElementById('patient-tbody');
+      tbody.innerHTML = data.map(p => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
+          <td class="px-6 py-3.5">
+            <div class="flex items-center gap-3">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.avatar}&backgroundColor=${p.bg}" class="w-8 h-8 rounded-full" alt=""/>
+              <div><p class="text-sm font-medium text-slate-800 dark:text-slate-100">${p.name}</p><p class="text-xs text-slate-500">#P${String(patientsData.indexOf(p)+1).padStart(3,'0')}</p></div>
+            </div>
+          </td>
+          <td class="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">${p.age} · ${p.sex}</td>
+          <td class="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">${p.dx}</td>
+          <td class="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">${p.date}</td>
+          <td class="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">${p.notes}</td>
+          <td class="px-4 py-3.5"><span class="${statusBadge(p.status)}">${p.status}</span></td>
+          <td class="px-4 py-3.5">
+            <div class="flex items-center gap-2">
+              <button onclick="showPage('summaries');showToast('Loading ${p.name} summary…','info')" class="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline">View</button>
+              <button onclick="showPage('upload');showToast('Pre-filled patient ${p.name}','info')" class="text-xs text-slate-500 dark:text-slate-400 hover:underline">Upload</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+    function filterPatients() {
+      const q = document.getElementById('patient-search').value.toLowerCase();
+      renderPatients(q ? patientsData.filter(p => p.name.toLowerCase().includes(q) || p.dx.toLowerCase().includes(q)) : patientsData);
+    }
+
+    // ── Upload / file drag ──
+    function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+    function handleDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('drop-zone').classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) showFilePreview(file);
+    }
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) { showFilePreview(file); simulateUpload(); }
+    }
+    function showFilePreview(file) {
+      document.getElementById('file-name').textContent = file.name;
+      document.getElementById('file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+      document.getElementById('file-preview').classList.remove('hidden');
+    }
+    function removeFile() {
+      document.getElementById('file-preview').classList.add('hidden');
+      document.getElementById('file-input').value = '';
+    }
+    function simulateUpload() {
+      const prog = document.getElementById('upload-progress');
+      const bar  = document.getElementById('upload-bar');
+      const pct  = document.getElementById('upload-pct');
+      prog.classList.remove('hidden');
+      let p = 0;
+      const iv = setInterval(() => {
+        p += Math.random() * 15;
+        if (p >= 100) { p = 100; clearInterval(iv); setTimeout(() => { prog.classList.add('hidden'); showToast('File uploaded successfully!', 'success'); }, 500); }
+        bar.style.width = p + '%';
+        pct.textContent = Math.floor(p) + '%';
+      }, 150);
+    }
+
+    // ── Character count ──
+    document.getElementById('clinical-note-text')?.addEventListener('input', function() {
+      document.getElementById('char-count').textContent = this.value.length + ' characters';
+    });
+
+    // ── Voice note ──
+    function startVoiceNote() {
+      showToast('Voice recording started — speak your note…', 'info');
+      document.getElementById('voice-btn').classList.add('ring-2','ring-red-400');
+      setTimeout(() => {
+        document.getElementById('voice-btn').classList.remove('ring-2','ring-red-400');
+        showToast('Voice note saved! Transcribing…', 'success');
+      }, 3000);
+    }
+
+    // ── AI Summary generation ──
+    const aiSteps = ['Parsing clinical content…','Extracting key symptoms…','Analyzing diagnosis patterns…','Generating SOAP structure…','Finalizing summary…'];
+    function generateSummary() {
+      const note = document.getElementById('clinical-note-text').value;
+      const btn  = document.getElementById('generate-btn');
+      const ai   = document.getElementById('ai-processing');
+      btn.disabled = true; btn.textContent = 'Processing…'; btn.style.opacity = '0.7';
+      ai.classList.remove('hidden');
+      let step = 0, progress = 0;
+      const iv = setInterval(() => {
+        progress += 20;
+        document.getElementById('ai-progress-bar').style.width = progress + '%';
+        document.getElementById('ai-status-msg').textContent = aiSteps[step++];
+        if (progress >= 100) {
+          clearInterval(iv);
+          setTimeout(() => {
+            ai.classList.add('hidden');
+            btn.disabled = false; btn.innerHTML = '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Generate AI Summary'; btn.style.opacity = '1';
+            showToast('AI Summary generated! View in AI Summaries', 'success', 5000);
+            showPage('summaries');
+          }, 600);
+        }
+      }, 700);
+    }
+
+    // ── SOAP Tabs ──
+    function switchTab(group, tab) {
+      document.querySelectorAll(`.soap-content`).forEach(c => c.classList.add('hidden'));
+      document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(`soap-${tab}`).classList.remove('hidden');
+      event.target.classList.add('active');
+    }
+
+    // ── Init ──
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPatients(patientsData);
+      setTimeout(animateCounters, 300);
+    });
+  </script>
+</body>
+</html>
