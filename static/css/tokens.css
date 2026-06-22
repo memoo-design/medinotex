@@ -1,0 +1,68 @@
+/* ============================================================
+   MediNoteX — tokens.css
+   Single source of truth for color, spacing, radius, shadow,
+   and typography across the ENTIRE app. Every page includes
+   this file FIRST, before base.css/components.css.
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --primary: #1E40AF;
+  --primary-light: #3B82F6;
+  --primary-dark: #1E3A8A;
+  --accent: #06B6D4;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+
+  /* Surfaces */
+  --bg: #F0F6FF;
+  --card: #FFFFFF;
+  --border: #E2E8F0;
+
+  /* Text */
+  --t1: #0F172A;  /* heading / strong */
+  --t2: #475569;  /* body */
+  --t3: #94A3B8;  /* muted / labels */
+
+  /* Radius scale */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Shadow scale */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow-md: 0 8px 24px rgba(0,0,0,.08);
+  --shadow-lg: 0 20px 50px rgba(30,64,175,.14);
+
+  /* Sidebar / layout */
+  --sidebar-w: 260px;
+  --topbar-h: 62px;
+
+  /* Typography — unified on Outfit everywhere (was Sora/DM Sans/Inter/Syne, mixed per page) */
+  --font: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Status badge colors (light) */
+  --badge-approved-bg: #D1FAE5; --badge-approved-fg: #065F46;
+  --badge-pending-bg:  #FEF3C7; --badge-pending-fg:  #92400E;
+  --badge-rejected-bg: #FEE2E2; --badge-rejected-fg: #991B1B;
+  --badge-draft-bg:    #F1F5F9; --badge-draft-fg:    #475569;
+  --badge-processing-bg:#DBEAFE; --badge-processing-fg:#1E40AF;
+}
+
+.dark {
+  --bg: #0F172A;
+  --card: #1E293B;
+  --border: #334155;
+  --t1: #F1F5F9;
+  --t2: #94A3B8;
+  --t3: #64748B;
+
+  --badge-approved-bg: #06503040;  --badge-approved-fg: #6EE7B7;
+  --badge-pending-bg:  #44330060;  --badge-pending-fg:  #FCD34D;
+  --badge-rejected-bg: #7F1D1D40;  --badge-rejected-fg: #FCA5A5;
+  --badge-draft-bg:    #33415540;  --badge-draft-fg:    #94A3B8;
+  --badge-processing-bg:#1E3A8A40; --badge-processing-fg:#93C5FD;
+}

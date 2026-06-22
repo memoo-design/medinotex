@@ -1,0 +1,37 @@
+/* ============================================================
+   MediNoteX — pages/doctor.css
+   Page-specific styles ONLY. Everything reusable (sidebar,
+   topbar, buttons, cards, tables, badges, modals, toasts,
+   stepper, skeletons, empty states) lives in components.css.
+   ============================================================ */
+
+.page-section { display: none; }
+.page-section.active { display: block; animation: fadeUp .35s ease both; }
+
+/* Drag & drop upload zone */
+#dropZone.drag-over { border-color: var(--primary); background: rgba(30,64,175,.05); }
+.dark #dropZone.drag-over { background: rgba(30,64,175,.15); }
+
+/* AI "thinking" wave */
+.ai-wave span {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--primary); margin: 0 2px; animation: aiWave 1.4s infinite ease-in-out;
+}
+.ai-wave span:nth-child(1){animation-delay:0s} .ai-wave span:nth-child(2){animation-delay:.2s}
+.ai-wave span:nth-child(3){animation-delay:.4s} .ai-wave span:nth-child(4){animation-delay:.6s}
+@keyframes aiWave { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1.2);opacity:1} }
+
+/* SOAP tabs */
+.soap-tab { cursor: pointer; transition: all .2s; }
+.soap-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.soap-tab:not(.active):hover { background: var(--bg); color: var(--primary); }
+.soap-content textarea { width: 100%; min-height: 90px; resize: vertical; }
+
+/* Needs-revision card accent */
+.revision-card { border-left: 4px solid var(--warning); }
+
+/* Counter pulse used by stat cards on first paint */
+.stat-pulse { animation: pulse 1.4s ease 1; }
+
+/* Status pill row inside the stepper review card */
+.unsaved-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); display: inline-block; animation: pulse 1.5s infinite; }

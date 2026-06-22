@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MediNotex – Medical Coder Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  /* ===== CSS VARIABLES ===== */
+  :root {
+    --primary:#1E40AF;--primary-light:#3B82F6;--primary-dark:#1e3a8a;
+    --accent:#06B6D4;--success:#10B981;--warning:#F59E0B;--danger:#EF4444;
+    --bg:#F1F5F9;--surface:#FFFFFF;--surface2:#F8FAFC;--border:#E2E8F0;
+    --text:#0F172A;--text2:#475569;--text3:#94A3B8;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+    --shadow-lg:0 8px 32px rgba(30,64,175,.12);
+    --radius:1rem;--sidebar-w:260px;
+    --transition:all .25s cubic-bezier(.4,0,.2,1);
+  }
+  html.dark {
+    --bg:#0F172A;--surface:#1E293B;--surface2:#0F172A;--border:#334155;
+    --text:#F1F5F9;--text2:#94A3B8;--text3:#64748B;
+    --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+  }
+
+  /* ===== RESET / BASE ===== */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:var(--transition)}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+  /* ===== LAYOUT ===== */
+  .layout{display:flex;min-height:100vh}
+  .main-content{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;transition:var(--transition)}
+  .page-content{padding:24px;flex:1}
+
+  /* ===== SIDEBAR ===== */
+  .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:200;transition:var(--transition);overflow-y:auto;overflow-x:hidden}
+  .sidebar.collapsed{width:72px}
+  .sidebar.collapsed .nav-label,.sidebar.collapsed .brand-name,.sidebar.collapsed .brand-sub,.sidebar.collapsed .nav-badge{display:none}
+  .sidebar.collapsed .nav-item{justify-content:center;padding:10px}
+  .sidebar.collapsed .nav-item i{margin:0}
+  .sidebar.collapsed .nav-section-title{display:none}
+  .sidebar-brand{padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+  .brand-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .brand-icon svg{color:#fff;width:22px;height:22px}
+  .brand-name{font-size:17px;font-weight:800;color:var(--primary);letter-spacing:-.3px}
+  .brand-sub{font-size:10px;color:var(--text3);font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+  .nav-section{padding:12px 8px 4px}
+  .nav-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:0 8px 6px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:.75rem;cursor:pointer;transition:var(--transition);position:relative;color:var(--text2);font-size:13.5px;font-weight:500}
+  .nav-item:hover{background:rgba(30,64,175,.07);color:var(--primary)}
+  .nav-item.active{background:rgba(30,64,175,.1);color:var(--primary);font-weight:600}
+  .nav-item.active::before{content:'';position:absolute;left:0;top:25%;height:50%;width:3px;background:var(--primary);border-radius:0 2px 2px 0}
+  .nav-item svg{width:18px;height:18px;flex-shrink:0}
+  .nav-badge{background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:auto}
+  .nav-badge.green{background:var(--success)}
+  .nav-badge.orange{background:var(--warning)}
+  .sidebar-footer{margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)}
+  .sidebar-toggle-btn{display:none;position:fixed;bottom:20px;left:16px;z-index:300;background:var(--primary);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;align-items:center;justify-content:center;box-shadow:var(--shadow-lg)}
+
+  /* ===== TOPBAR ===== */
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:64px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  .topbar-left{flex:1;display:flex;align-items:center;gap:12px}
+  .page-title{font-size:18px;font-weight:700;color:var(--text);white-space:nowrap}
+  .search-wrap{position:relative;max-width:320px;width:100%}
+  .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);width:16px;height:16px}
+  .search-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:.75rem;padding:8px 12px 8px 34px;font-size:13px;color:var(--text);outline:none;transition:var(--transition)}
+  .search-input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .icon-btn{width:38px;height:38px;border-radius:.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:var(--bg);color:var(--text2);transition:var(--transition);position:relative}
+  .icon-btn:hover{background:rgba(30,64,175,.1);color:var(--primary)}
+  .icon-btn svg{width:18px;height:18px}
+  .notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:2px solid var(--surface)}
+  .dark-toggle{cursor:pointer;width:44px;height:24px;border-radius:99px;background:var(--border);position:relative;transition:var(--transition);border:none;flex-shrink:0}
+  .dark-toggle.on{background:var(--primary)}
+  .dark-toggle-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:var(--transition);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .dark-toggle.on .dark-toggle-thumb{left:22px}
+  .avatar-btn{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;font-weight:700;color:#fff;border:2px solid var(--border)}
+
+  /* ===== CARDS ===== */
+  .card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);transition:var(--transition)}
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+  .card-p{padding:20px}
+  .stat-card{display:flex;flex-direction:column;gap:12px}
+  .stat-icon{width:48px;height:48px;border-radius:.875rem;display:flex;align-items:center;justify-content:center}
+  .stat-icon svg{width:22px;height:22px}
+  .stat-val{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1}
+  .stat-label{font-size:12.5px;color:var(--text2);font-weight:500}
+  .stat-delta{font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:4px}
+  .stat-delta.up{color:var(--success)}
+  .stat-delta.down{color:var(--danger)}
+  .stat-delta.neutral{color:var(--warning)}
+
+  /* ===== GRIDS ===== */
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+
+  /* ===== SECTION HEADER ===== */
+  .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .section-title{font-size:15px;font-weight:700;color:var(--text)}
+  .section-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+  /* ===== BADGES ===== */
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+  .badge-blue{background:rgba(59,130,246,.12);color:#2563EB}
+  .badge-green{background:rgba(16,185,129,.12);color:#059669}
+  .badge-red{background:rgba(239,68,68,.12);color:#DC2626}
+  .badge-yellow{background:rgba(245,158,11,.12);color:#D97706}
+  .badge-purple{background:rgba(139,92,246,.12);color:#7C3AED}
+  .badge-gray{background:rgba(148,163,184,.12);color:var(--text2)}
+  .conf-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+  .conf-high{background:rgba(16,185,129,.15);color:#059669}
+  .conf-med{background:rgba(245,158,11,.15);color:#D97706}
+  .conf-low{background:rgba(239,68,68,.15);color:#DC2626}
+
+  /* ===== BUTTONS ===== */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:.75rem;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:var(--transition)}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+  .btn-ghost:hover{background:var(--bg);color:var(--text)}
+  .btn-success{background:var(--success);color:#fff}
+  .btn-success:hover{background:#059669}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-danger:hover{background:#DC2626}
+  .btn-sm{padding:5px 11px;font-size:12px}
+  .btn-xs{padding:3px 9px;font-size:11px;border-radius:.5rem}
+  .btn svg{width:14px;height:14px}
+
+  /* ===== TABS ===== */
+  .tabs{display:flex;gap:4px;background:var(--bg);border-radius:.875rem;padding:4px;border:1px solid var(--border)}
+  .tab{padding:7px 16px;border-radius:.625rem;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);transition:var(--transition);border:none;background:transparent}
+  .tab.active{background:var(--surface);color:var(--primary);font-weight:600;box-shadow:var(--shadow)}
+
+  /* ===== TABLE ===== */
+  .tbl-wrap{overflow-x:auto;border-radius:.875rem}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:10px 14px;font-size:11.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;background:var(--bg);border-bottom:1px solid var(--border)}
+  td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text2)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(30,64,175,.03)}
+  .td-main{color:var(--text);font-weight:600}
+
+  /* ===== FORMS ===== */
+  .form-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block}
+  .form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:.75rem;padding:9px 13px;font-size:13px;color:var(--text);outline:none;transition:var(--transition);font-family:inherit}
+  .form-input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+  textarea.form-input{resize:vertical;min-height:80px}
+  select.form-input{cursor:pointer}
+
+  /* ===== PROGRESS ===== */
+  .prog-bar{height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+  .prog-fill{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+
+  /* ===== MODAL ===== */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .modal-overlay.show{display:flex;animation:fadeIn .2s ease}
+  .modal{background:var(--surface);border-radius:1.25rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .modal-title{font-size:16px;font-weight:700}
+  .modal-close{cursor:pointer;background:var(--bg);border:none;width:32px;height:32px;border-radius:.5rem;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:var(--transition)}
+  .modal-close:hover{background:rgba(239,68,68,.1);color:var(--danger)}
+  .modal-body{padding:20px 24px}
+  .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+
+  /* ===== TOAST ===== */
+  .toast-container{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:10px}
+  .toast{background:var(--surface);border:1px solid var(--border);border-radius:.875rem;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-lg);animation:slideUp .3s ease;min-width:280px;max-width:360px}
+  .toast.removing{animation:slideDown .3s ease forwards}
+  .toast-icon{width:32px;height:32px;border-radius:.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .toast-icon svg{width:16px;height:16px}
+  .toast-text{flex:1;font-size:13px;font-weight:500;color:var(--text)}
+  .toast-close{cursor:pointer;color:var(--text3);background:none;border:none}
+  .toast-close svg{width:14px;height:14px}
+
+  /* ===== SKELETON ===== */
+  .skeleton{background:linear-gradient(90deg,var(--border) 25%,var(--bg) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:.5rem}
+
+  /* ===== PAGE SECTIONS ===== */
+  .page-section{display:none}
+  .page-section.active{display:block;animation:fadeIn .3s ease}
+
+  /* ===== SCROLLABLE CHART ===== */
+  .chart-wrap{position:relative;height:240px}
+
+  /* ===== CODE VALIDATION ===== */
+  .code-row{background:var(--surface);border:1px solid var(--border);border-radius:.875rem;padding:16px;transition:var(--transition)}
+  .code-row:hover{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.08)}
+  .code-chip{font-family:'Courier New',monospace;font-weight:700;font-size:13px;color:var(--primary);background:rgba(30,64,175,.08);padding:4px 10px;border-radius:.5rem;letter-spacing:.3px}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(16px)}}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .btn-draft{background:rgba(245,158,11,.1);color:var(--warning);border:1px solid rgba(245,158,11,.25)}
+  .btn-draft:hover{background:rgba(245,158,11,.2)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+
+  /* ===== TOOLTIP ===== */
+  [data-tooltip]{position:relative}
+  [data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1E293B;color:#F1F5F9;font-size:11px;padding:4px 9px;border-radius:.5rem;white-space:nowrap;z-index:500;pointer-events:none}
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:1200px){
+    .grid-4{grid-template-columns:repeat(2,1fr)}
+    .grid-3{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:900px){
+    .main-content{margin-left:0}
+    .sidebar{transform:translateX(-100%);width:var(--sidebar-w)!important}
+    .sidebar.mobile-open{transform:translateX(0)}
+    .sidebar-toggle-btn{display:flex}
+    .topbar{padding:0 16px}
+    .page-content{padding:16px}
+    .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150;display:none}
+    .sidebar-overlay.show{display:block}
+  }
+  @media(max-width:640px){
+    .grid-4,.grid-3,.grid-2{grid-template-columns:1fr}
+    .search-wrap{display:none}
+    .topbar-right .icon-btn:not(:last-child){display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></div>
+    <div><div class="brand-name">MediNotex</div><div class="brand-sub">Coder Portal</div></div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)" data-tooltip="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="nav-label">Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="showPage('pending',this)" data-tooltip="Pending Reviews">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span class="nav-label">Pending Reviews</span>
+      <span class="nav-badge">14</span>
+    </div>
+    <div class="nav-item" onclick="showPage('icd',this)" data-tooltip="ICD Validation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="nav-label">ICD Code Validation</span>
+    </div>
+    <div class="nav-item" onclick="showPage('cpt',this)" data-tooltip="CPT Management">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span class="nav-label">CPT Code Management</span>
+    </div>
+    <div class="nav-item" onclick="showPage('ai',this)" data-tooltip="AI Suggestions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 012 2v2a2 2 0 01-2 2 2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M12 16a2 2 0 012 2v2a2 2 0 01-2 2 2 2 0 01-2-2v-2a2 2 0 012-2z"/><path d="M2 12a2 2 0 012-2h2a2 2 0 012 2 2 2 0 01-2 2H4a2 2 0 01-2-2z"/><path d="M16 12a2 2 0 012-2h2a2 2 0 012 2 2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span class="nav-label">AI Coding Suggestions</span>
+      <span class="nav-badge orange">3</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Billing</div>
+    <div class="nav-item" onclick="showPage('claims',this)" data-tooltip="Claims">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="nav-label">Claims</span>
+    </div>
+    <div class="nav-item" onclick="showPage('billing',this)" data-tooltip="Billing Reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span class="nav-label">Billing Reports</span>
+    </div>
+    <div class="nav-item" onclick="showPage('analytics',this)" data-tooltip="Analytics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="nav-label">Analytics</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Account</div>
+    <div class="nav-item" onclick="showPage('profile',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="nav-item" style="color:var(--danger)" onclick="showToast('Logged out successfully','success')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <span class="nav-label">Logout</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== MOBILE TOGGLE ===== -->
+<button class="sidebar-toggle-btn" id="sidebarToggle" onclick="toggleSidebar()">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main-content" id="mainContent">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn" onclick="toggleSidebar()" style="display:none" id="desktopToggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="page-title" id="pageTitle">Dashboard</span>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="globalSearch" placeholder="Search codes, claims..." oninput="handleSearch(this.value)"/>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div style="display:flex;align-items:center;gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+        <button class="dark-toggle" id="darkToggle" onclick="toggleDark()"><div class="dark-toggle-thumb"></div></button>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </div>
+      <button class="icon-btn" onclick="showNotifModal()" data-tooltip="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="avatar-btn" data-tooltip="Sarah Mitchell" onclick="showPage('profile',null)">SM</div>
+    </div>
+  </header>
+
+  <!-- PAGE CONTENT -->
+  <div class="page-content">
+
+    <!-- ===== DASHBOARD PAGE ===== -->
+    <div class="page-section active" id="page-dashboard">
+      <!-- Welcome Banner -->
+      <div style="background:linear-gradient(135deg,var(--primary) 0%,#1d4ed8 50%,var(--accent) 100%);border-radius:var(--radius);padding:24px 28px;margin-bottom:24px;position:relative;overflow:hidden">
+        <div style="position:absolute;right:-20px;top:-20px;width:140px;height:140px;background:rgba(255,255,255,.06);border-radius:50%"></div>
+        <div style="position:absolute;right:60px;bottom:-40px;width:100px;height:100px;background:rgba(255,255,255,.04);border-radius:50%"></div>
+        <div style="position:relative;z-index:1">
+          <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px">Good Morning</div>
+          <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:6px">Sarah Mitchell, CPC</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.75)">You have <strong style="color:#fff">14 pending reviews</strong> and <strong style="color:#fff">3 AI alerts</strong> today. Coding accuracy at <strong style="color:#FCD34D">97.4%</strong></div>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid-4" style="margin-bottom:24px">
+        <div class="card card-p stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="stat-icon" style="background:rgba(30,64,175,.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1E40AF" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <span class="badge badge-yellow">+4 today</span>
+          </div>
+          <div><div class="stat-val">14</div><div class="stat-label">Pending Reviews</div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:46%;background:var(--warning)"></div></div>
+          <div class="stat-delta neutral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg> 46% of daily target</div>
+        </div>
+        <div class="card card-p stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="stat-icon" style="background:rgba(16,185,129,.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" width="22" height="22"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <span class="badge badge-green">↑ 8.2%</span>
+          </div>
+          <div><div class="stat-val">284</div><div class="stat-label">Approved Claims</div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:78%;background:var(--success)"></div></div>
+          <div class="stat-delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg> 8.2% vs last week</div>
+        </div>
+        <div class="card card-p stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="stat-icon" style="background:rgba(6,182,212,.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12"/><polyline points="12 16 12.01 16"/></svg>
+            </div>
+            <span class="badge badge-blue">Excellent</span>
+          </div>
+          <div><div class="stat-val">97.4%</div><div class="stat-label">Coding Accuracy</div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:97.4%;background:var(--accent)"></div></div>
+          <div class="stat-delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg> +0.3% this month</div>
+        </div>
+        <div class="card card-p stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="stat-icon" style="background:rgba(239,68,68,.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <span class="badge badge-red">↓ 3 today</span>
+          </div>
+          <div><div class="stat-val">7</div><div class="stat-label">Rejected Claims</div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:12%;background:var(--danger)"></div></div>
+          <div class="stat-delta down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="18 9 12 15 6 9"/></svg> 2.4% rejection rate</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid-2" style="margin-bottom:24px">
+        <div class="card card-p">
+          <div class="section-hdr">
+            <div><div class="section-title">Weekly Coding Volume</div><div class="section-sub">ICD + CPT codes processed</div></div>
+            <div class="tabs" style="gap:2px;padding:2px">
+              <button class="tab active" onclick="toggleTab(this,'w')">Week</button>
+              <button class="tab" onclick="toggleTab(this,'m')">Month</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="volumeChart"></canvas></div>
+        </div>
+        <div class="card card-p">
+          <div class="section-hdr">
+            <div><div class="section-title">Code Category Breakdown</div><div class="section-sub">Distribution by specialty</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Recent Activity + Top Coders -->
+      <div class="grid-2">
+        <div class="card card-p">
+          <div class="section-hdr">
+            <div class="section-title">Recent Validations</div>
+            <button class="btn btn-ghost btn-sm" onclick="showPage('icd',document.querySelector('[onclick*=icd]'))">View All</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div id="recentValidations"></div>
+          </div>
+        </div>
+        <div class="card card-p">
+          <div class="section-hdr">
+            <div class="section-title">Accuracy Trend</div>
+            <span class="badge badge-green">97.4% avg</span>
+          </div>
+          <div class="chart-wrap"><canvas id="accuracyChart"></canvas></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px">
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:800;color:var(--success)">97.4%</div>
+              <div style="font-size:11px;color:var(--text3)">This Month</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:800;color:var(--primary)">96.8%</div>
+              <div style="font-size:11px;color:var(--text3)">Last Month</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:800;color:var(--accent)">97.1%</div>
+              <div style="font-size:11px;color:var(--text3)">3-Mo Avg</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /dashboard -->
+
+    <!-- ===== PENDING REVIEWS PAGE ===== -->
+    <div class="page-section" id="page-pending">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <div><div class="section-title" style="font-size:20px">Pending Reviews</div><div class="section-sub">14 cases require your attention</div></div>
+        <div style="display:flex;gap:8px">
+          <select class="form-input" style="width:auto;padding:7px 12px;font-size:12px">
+            <option>All Priorities</option><option>High</option><option>Medium</option><option>Low</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="showToast('Bulk review mode activated','info')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Bulk Review
+          </button>
+        </div>
+      </div>
+      <div id="pendingList" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+
+    <!-- ===== ICD VALIDATION PAGE ===== -->
+    <div class="page-section" id="page-icd">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <div><div class="section-title" style="font-size:20px">ICD Code Validation</div><div class="section-sub">AI-generated ICD-10/ICD-11 codes awaiting approval</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Filter</button>
+          <button class="btn btn-primary btn-sm" onclick="showToast('All approved codes exported','success')">Export</button>
+        </div>
+      </div>
+
+      <!-- Summary Strip -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <div class="card card-p" style="flex:1;min-width:120px;padding:14px">
+          <div style="font-size:22px;font-weight:800;color:var(--primary)">38</div>
+          <div style="font-size:11px;color:var(--text3)">Total for Review</div>
+        </div>
+        <div class="card card-p" style="flex:1;min-width:120px;padding:14px">
+          <div style="font-size:22px;font-weight:800;color:var(--success)">24</div>
+          <div style="font-size:11px;color:var(--text3)">Approved</div>
+        </div>
+        <div class="card card-p" style="flex:1;min-width:120px;padding:14px">
+          <div style="font-size:22px;font-weight:800;color:var(--warning)">11</div>
+          <div style="font-size:11px;color:var(--text3)">Pending</div>
+        </div>
+        <div class="card card-p" style="flex:1;min-width:120px;padding:14px">
+          <div style="font-size:22px;font-weight:800;color:var(--danger)">3</div>
+          <div style="font-size:11px;color:var(--text3)">Rejected</div>
+        </div>
+        <div class="card card-p" style="flex:1;min-width:120px;padding:14px">
+          <div style="font-size:22px;font-weight:800;color:var(--accent)">93.8%</div>
+          <div style="font-size:11px;color:var(--text3)">AI Confidence avg</div>
+        </div>
+      </div>
+
+      <div id="icdList" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+
+    <!-- ===== CPT CODE MANAGEMENT ===== -->
+    <div class="page-section" id="page-cpt">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <div><div class="section-title" style="font-size:20px">CPT Code Management</div><div class="section-sub">Procedure code review and management</div></div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addCptModal')">+ Add CPT Code</button>
+      </div>
+
+      <!-- CPT Table -->
+      <div class="card" style="margin-bottom:20px">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap">
+          <div class="search-wrap" style="max-width:260px;flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" placeholder="Search CPT codes..." oninput="filterCPT(this.value)"/>
+          </div>
+          <select class="form-input" style="width:auto;padding:7px 12px;font-size:12px" onchange="filterCPTCat(this.value)">
+            <option>All Categories</option><option>E&M</option><option>Surgery</option><option>Radiology</option><option>Pathology</option><option>Medicine</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table id="cptTable">
+            <thead>
+              <tr>
+                <th>CPT Code</th><th>Description</th><th>Category</th><th>RVU</th><th>AI Suggested</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cptBody"></tbody>
+          </table>
+        </div>
+        <div style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text3)">Showing 1-8 of 48 codes</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-xs">Prev</button>
+            <button class="btn btn-primary btn-xs">1</button>
+            <button class="btn btn-ghost btn-xs">2</button>
+            <button class="btn btn-ghost btn-xs">3</button>
+            <button class="btn btn-ghost btn-xs">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== AI CODING SUGGESTIONS ===== -->
+    <div class="page-section" id="page-ai">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <div><div class="section-title" style="font-size:20px">AI Coding Suggestions</div><div class="section-sub">Machine learning-powered code recommendations</div></div>
+        <span class="badge badge-purple" style="font-size:12px;padding:5px 12px">⚡ 3 new alerts</span>
+      </div>
+
+      <!-- AI Model Status -->
+      <div class="grid-3" style="margin-bottom:20px">
+        <div class="card card-p" style="border-left:3px solid var(--success)">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px">AI Model Status</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:8px;height:8px;background:var(--success);border-radius:50%;animation:pulse 2s infinite"></div>
+            <span style="font-size:14px;font-weight:700;color:var(--success)">Active – v3.2.1</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Last trained: 2 days ago</div>
+        </div>
+        <div class="card card-p" style="border-left:3px solid var(--primary)">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Overall Confidence</div>
+          <div style="font-size:22px;font-weight:800;color:var(--primary)">94.2%</div>
+          <div class="prog-bar" style="margin-top:8px"><div class="prog-fill" style="width:94.2%;background:var(--primary)"></div></div>
+        </div>
+        <div class="card card-p" style="border-left:3px solid var(--accent)">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Suggestions Today</div>
+          <div style="font-size:22px;font-weight:800;color:var(--accent)">127</div>
+          <div style="font-size:11px;color:var(--success);margin-top:4px">↑ 23 more than yesterday</div>
+        </div>
+      </div>
+
+      <div id="aiSuggestions" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+
+    <!-- ===== CLAIMS PAGE ===== -->
+    <div class="page-section" id="page-claims">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <div><div class="section-title" style="font-size:20px">Claims Management</div><div class="section-sub">Track and manage all submitted claims</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Claims exported to CSV','success')">Export CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('newClaimModal')">+ New Claim</button>
+        </div>
+      </div>
+
+      <!-- Claims Stats -->
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:12px;color:var(--text3)">Total Claims</div>
+          <div style="font-size:24px;font-weight:800;color:var(--text)">342</div>
+          <div class="badge badge-blue" style="margin-top:4px">This month</div>
+        </div>
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:12px;color:var(--text3)">Paid</div>
+          <div style="font-size:24px;font-weight:800;color:var(--success)">$284,720</div>
+          <div class="badge badge-green" style="margin-top:4px">247 claims</div>
+        </div>
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:12px;color:var(--text3)">Pending</div>
+          <div style="font-size:24px;font-weight:800;color:var(--warning)">$42,100</div>
+          <div class="badge badge-yellow" style="margin-top:4px">88 claims</div>
+        </div>
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:12px;color:var(--text3)">Denied</div>
+          <div style="font-size:24px;font-weight:800;color:var(--danger)">$7,340</div>
+          <div class="badge badge-red" style="margin-top:4px">7 claims</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div class="search-wrap" style="max-width:260px;flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" placeholder="Search by claim ID, patient..." oninput="filterClaims(this.value)"/>
+          </div>
+          <select class="form-input" style="width:auto;padding:7px 12px;font-size:12px" onchange="filterClaimStatus(this.value)">
+            <option>All Status</option><option>Approved</option><option>Pending</option><option>Denied</option><option>Under Review</option>
+          </select>
+          <input type="date" class="form-input" style="width:auto;padding:7px 12px;font-size:12px"/>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>Claim ID</th><th>Patient</th><th>Provider</th><th>ICD Codes</th><th>Amount</th><th>Submitted</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="claimsBody"></tbody>
+          </table>
+        </div>
+        <div style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text3)">Showing 1-10 of 342 claims</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-xs">‹ Prev</button>
+            <button class="btn btn-primary btn-xs">1</button>
+            <button class="btn btn-ghost btn-xs">2</button>
+            <button class="btn btn-ghost btn-xs">...</button>
+            <button class="btn btn-ghost btn-xs">35</button>
+            <button class="btn btn-ghost btn-xs">Next ›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BILLING REPORTS ===== -->
+    <div class="page-section" id="page-billing">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <div><div class="section-title" style="font-size:20px">Billing Reports</div><div class="section-sub">Financial summaries and payment tracking</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('auditModal')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Audit Log
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="showToast('Generating report PDF...','info')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Billing Chart -->
+      <div class="card card-p" style="margin-bottom:20px">
+        <div class="section-hdr">
+          <div><div class="section-title">Revenue vs. Claims (6 Months)</div></div>
+          <span class="badge badge-green">Total: $327,060</span>
+        </div>
+        <div class="chart-wrap" style="height:260px"><canvas id="billingChart"></canvas></div>
+      </div>
+
+      <!-- Reports Table -->
+      <div class="card">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap">
+          <div class="search-wrap" style="max-width:240px;flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" placeholder="Search reports..."/>
+          </div>
+          <select class="form-input" style="width:auto;padding:7px 12px;font-size:12px">
+            <option>All Payers</option><option>Medicare</option><option>Medicaid</option><option>BlueCross</option><option>Aetna</option>
+          </select>
+          <select class="form-input" style="width:auto;padding:7px 12px;font-size:12px">
+            <option>Last 30 days</option><option>Last 60 days</option><option>Last 90 days</option><option>Custom</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Report Title</th><th>Payer</th><th>Period</th><th>Total Billed</th><th>Collected</th><th>Adj. Rate</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="billingBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ANALYTICS PAGE ===== -->
+    <div class="page-section" id="page-analytics">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <div><div class="section-title" style="font-size:20px">Analytics</div><div class="section-sub">Coding performance & operational metrics</div></div>
+        <div style="display:flex;gap:8px">
+          <div class="tabs">
+            <button class="tab active" onclick="toggleTab(this,'7d')">7D</button>
+            <button class="tab" onclick="toggleTab(this,'1m')">1M</button>
+            <button class="tab" onclick="toggleTab(this,'3m')">3M</button>
+            <button class="tab" onclick="toggleTab(this,'1y')">1Y</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:24px">
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.5px">Codes Processed</div>
+          <div style="font-size:26px;font-weight:800;color:var(--text);margin:4px 0">1,847</div>
+          <div class="stat-delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg>+12.4% vs prior period</div>
+        </div>
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.5px">Avg Review Time</div>
+          <div style="font-size:26px;font-weight:800;color:var(--primary);margin:4px 0">4.2m</div>
+          <div class="stat-delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg>-0.8m improvement</div>
+        </div>
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.5px">AI Acceptance Rate</div>
+          <div style="font-size:26px;font-weight:800;color:var(--success);margin:4px 0">89.3%</div>
+          <div class="stat-delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg>+3.2% this week</div>
+        </div>
+        <div class="card card-p" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.5px">Denial Rate</div>
+          <div style="font-size:26px;font-weight:800;color:var(--danger);margin:4px 0">2.4%</div>
+          <div class="stat-delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg>↓ 0.6% improvement</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="card card-p">
+          <div class="section-hdr"><div class="section-title">Daily Review Performance</div></div>
+          <div class="chart-wrap"><canvas id="analyticsBar"></canvas></div>
+        </div>
+        <div class="card card-p">
+          <div class="section-hdr"><div class="section-title">Code Rejection Reasons</div></div>
+          <div class="chart-wrap"><canvas id="rejectionChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Coder Leaderboard -->
+      <div class="card card-p">
+        <div class="section-hdr"><div class="section-title">Team Performance Leaderboard</div><span class="badge badge-blue">This Month</span></div>
+        <div id="leaderboard" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE PAGE ===== -->
+    <div class="page-section" id="page-profile">
+      <div style="max-width:700px;margin:0 auto">
+        <!-- Profile Header -->
+        <div class="card card-p" style="margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;flex-shrink:0">SM</div>
+          <div style="flex:1">
+            <div style="font-size:20px;font-weight:800;color:var(--text)">Sarah Mitchell, CPC</div>
+            <div style="font-size:13px;color:var(--text2)">Senior Medical Coder · MediNotex Health System</div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+              <span class="badge badge-blue">Certified CPC</span>
+              <span class="badge badge-green">ICD-10 Specialist</span>
+              <span class="badge badge-purple">CPT Expert</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="showToast('Profile updated successfully','success')">Save Changes</button>
+        </div>
+
+        <!-- Profile Form -->
+        <div class="card card-p" style="margin-bottom:20px">
+          <div class="section-title" style="margin-bottom:16px">Personal Information</div>
+          <div class="grid-2" style="gap:14px">
+            <div><label class="form-label">First Name</label><input class="form-input" value="Sarah"/></div>
+            <div><label class="form-label">Last Name</label><input class="form-input" value="Mitchell"/></div>
+            <div><label class="form-label">Email</label><input class="form-input" value="sarah.mitchell@medinotex.com" type="email"/></div>
+            <div><label class="form-label">Phone</label><input class="form-input" value="+1 (555) 847-2931"/></div>
+            <div><label class="form-label">Certification ID</label><input class="form-input" value="CPC-2847291"/></div>
+            <div><label class="form-label">Specialty</label><select class="form-input"><option>Internal Medicine</option><option>Surgery</option><option>Cardiology</option></select></div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card card-p">
+          <div class="section-title" style="margin-bottom:16px">Performance Stats</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600;color:var(--text)">Coding Accuracy</span><span style="font-size:13px;font-weight:700;color:var(--success)">97.4%</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:97.4%;background:var(--success)"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600;color:var(--text)">AI Suggestion Adoption</span><span style="font-size:13px;font-weight:700;color:var(--primary)">89.3%</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:89.3%;background:var(--primary)"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600;color:var(--text)">Review Completion Rate</span><span style="font-size:13px;font-weight:700;color:var(--accent)">94%</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:94%;background:var(--accent)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main-content -->
+
+<!-- ===== MODALS ===== -->
+<!-- Notifications Modal -->
+<div class="modal-overlay" id="notifModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <div class="modal-title">Notifications</div>
+      <button class="modal-close" onclick="closeModal('notifModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="padding:12px">
+      <div id="notifList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Audit Modal -->
+<div class="modal-overlay" id="auditModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Audit History Log</div>
+      <button class="modal-close" onclick="closeModal('auditModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Record</th><th>Status</th></tr></thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost btn-sm" onclick="closeModal('auditModal')">Close</button><button class="btn btn-primary btn-sm" onclick="showToast('Audit log exported','success')">Export</button></div>
+  </div>
+</div>
+
+<!-- Add CPT Modal -->
+<div class="modal-overlay" id="addCptModal">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Add CPT Code</div><button class="modal-close" onclick="closeModal('addCptModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="grid-2" style="gap:12px">
+          <div><label class="form-label">CPT Code *</label><input class="form-input" placeholder="e.g. 99213"/></div>
+          <div><label class="form-label">Category</label><select class="form-input"><option>E&M</option><option>Surgery</option><option>Radiology</option><option>Pathology</option></select></div>
+        </div>
+        <div><label class="form-label">Description *</label><input class="form-input" placeholder="Code description"/></div>
+        <div class="grid-2" style="gap:12px">
+          <div><label class="form-label">RVU Value</label><input class="form-input" type="number" placeholder="0.00"/></div>
+          <div><label class="form-label">Fee Schedule</label><input class="form-input" type="number" placeholder="$0.00"/></div>
+        </div>
+        <div><label class="form-label">Notes</label><textarea class="form-input" placeholder="Optional notes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('addCptModal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('addCptModal');showToast('CPT code added successfully','success')">Add Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Claim Modal -->
+<div class="modal-overlay" id="newClaimModal">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Submit New Claim</div><button class="modal-close" onclick="closeModal('newClaimModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="grid-2" style="gap:12px">
+          <div><label class="form-label">Patient ID</label><input class="form-input" placeholder="PT-XXXXXX"/></div>
+          <div><label class="form-label">Provider NPI</label><input class="form-input" placeholder="1234567890"/></div>
+        </div>
+        <div><label class="form-label">Primary ICD-10 Code</label><input class="form-input" placeholder="e.g. E11.65"/></div>
+        <div><label class="form-label">CPT Code(s)</label><input class="form-input" placeholder="e.g. 99213, 99214"/></div>
+        <div class="grid-2" style="gap:12px">
+          <div><label class="form-label">Claim Amount</label><input class="form-input" type="number" placeholder="$0.00"/></div>
+          <div><label class="form-label">Payer</label><select class="form-input"><option>Medicare</option><option>Medicaid</option><option>BlueCross</option><option>Aetna</option><option>United</option></select></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('newClaimModal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('newClaimModal');showToast('Claim submitted successfully','success')">Submit Claim</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REJECT MODAL ===== -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="vertical-align:-3px;margin-right:6px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Reject AI Assignment
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px" id="rejectModalSubtitle">Please provide a reason for rejection</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('rejectModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rejectTargetId"/>
+      <input type="hidden" id="rejectTargetType"/>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label class="form-label">Rejection Reason *</label>
+          <select class="form-input" id="rejectReasonSelect" onchange="toggleCustomReason(this.value)">
+            <option value="">— Select a reason —</option>
+            <option value="wrong_code">Wrong code assigned by AI</option>
+            <option value="insufficient_docs">Insufficient documentation</option>
+            <option value="duplicate">Duplicate code / already coded</option>
+            <option value="not_covered">Service not covered by payer</option>
+            <option value="missing_modifier">Missing or incorrect modifier</option>
+            <option value="invalid_dx">Invalid diagnosis linkage</option>
+            <option value="other">Other (specify below)</option>
+          </select>
+        </div>
+        <div id="customReasonWrap" style="display:none">
+          <label class="form-label">Specify Reason</label>
+          <input class="form-input" id="rejectCustomReason" placeholder="Describe the issue…"/>
+        </div>
+        <div>
+          <label class="form-label">Additional Notes</label>
+          <textarea class="form-input" id="rejectNotes" placeholder="Optional: add context for the doctor or review team…" style="min-height:80px"></textarea>
+        </div>
+        <div style="background:rgba(239,68,68,.06);border-radius:.625rem;padding:10px 12px;border-left:3px solid var(--danger);font-size:12px;color:var(--text2)">
+          <strong style="color:var(--danger)">Note:</strong> The rejection reason will be logged in the audit trail and the doctor will be notified to re-review this case.
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('rejectModal')">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="rejectSubmitBtn" onclick="submitReject()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Confirm Rejection
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+/* =============================================
+   MEDINOTEX – MEDICAL CODER DASHBOARD JS
+   ============================================= */
+
+// ---- Dark Mode ----
+const darkToggle = document.getElementById('darkToggle');
+function applyDark(on) {
+  document.documentElement.className = on ? 'dark' : 'light';
+  darkToggle.className = 'dark-toggle' + (on ? ' on' : '');
+  localStorage.setItem('mnDark', on ? '1' : '0');
+  updateChartTheme();
+}
+function toggleDark() { applyDark(!document.documentElement.classList.contains('dark')); }
+if (localStorage.getItem('mnDark') === '1') applyDark(true);
+
+// ---- Sidebar ----
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+let sidebarOpen = true;
+function toggleSidebar() {
+  if (window.innerWidth <= 900) {
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('show');
+  } else {
+    sidebarOpen = !sidebarOpen;
+    sidebar.classList.toggle('collapsed', !sidebarOpen);
+    document.getElementById('mainContent').style.marginLeft = sidebarOpen ? 'var(--sidebar-w)' : '72px';
+  }
+}
+function closeSidebar() { sidebar.classList.remove('mobile-open'); overlay.classList.remove('show'); }
+
+// ---- Page Navigation ----
+function showPage(id, el) {
+  document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const titles = { dashboard:'Dashboard', pending:'Pending Reviews', icd:'ICD Code Validation', cpt:'CPT Code Management', ai:'AI Coding Suggestions', claims:'Claims', billing:'Billing Reports', analytics:'Analytics', profile:'Profile' };
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+  closeSidebar();
+}
+
+// ---- Tabs ----
+function toggleTab(el, key) {
+  el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ---- Modal ----
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+window.addEventListener('click', e => { if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('show'); });
+
+// ---- Toast ----
+let toastId = 0;
+function showToast(msg, type = 'info') {
+  const icons = { success:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>', error:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>', info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>', warning:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' };
+  const colors = { success:'var(--success)', error:'var(--danger)', info:'var(--primary)', warning:'var(--warning)' };
+  const id = ++toastId;
+  const t = document.createElement('div');
+  t.className = 'toast'; t.id = 'toast-' + id;
+  t.innerHTML = `<div class="toast-icon" style="background:${colors[type]}1a;color:${colors[type]}">${icons[type]}</div><div class="toast-text">${msg}</div><button class="toast-close" onclick="removeToast(${id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => removeToast(id), 4000);
+}
+function removeToast(id) {
+  const t = document.getElementById('toast-' + id);
+  if (t) { t.classList.add('removing'); setTimeout(() => t.remove(), 300); }
+}
+
+// ---- Notifications ----
+const notifs = [
+  { icon:'⚡', title:'AI Alert: Low confidence code', sub:'ICD E11.9 confidence dropped to 68%', time:'2m ago', color:'var(--warning)' },
+  { icon:'✅', title:'Claim #CLM-2847 approved', sub:'Medicare approved $1,240.00', time:'18m ago', color:'var(--success)' },
+  { icon:'🔄', title:'14 codes pending review', sub:'Assigned to your queue', time:'1h ago', color:'var(--primary)' },
+  { icon:'❌', title:'Claim #CLM-2839 denied', sub:'Missing modifier – action needed', time:'2h ago', color:'var(--danger)' },
+  { icon:'📊', title:'Weekly report ready', sub:'Download your performance summary', time:'4h ago', color:'var(--accent)' },
+];
+function showNotifModal() {
+  const list = document.getElementById('notifList');
+  list.innerHTML = notifs.map(n => `
+    <div style="display:flex;gap:12px;padding:12px;border-radius:.75rem;cursor:pointer;transition:var(--transition)" onmouseover="this.style.background='rgba(30,64,175,.05)'" onmouseout="this.style.background='transparent'">
+      <div style="width:36px;height:36px;background:${n.color}1a;border-radius:.625rem;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${n.icon}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${n.title}</div><div style="font-size:11.5px;color:var(--text3)">${n.sub}</div></div>
+      <div style="font-size:11px;color:var(--text3);white-space:nowrap">${n.time}</div>
+    </div>`).join('');
+  openModal('notifModal');
+}
+
+// ---- DATA ----
+const icdData = [
+  { id:'ICD-001', code:'E11.65', desc:'Type 2 diabetes with hyperglycemia', pt:'James Wilson', conf:96, status:'pending' },
+  { id:'ICD-002', code:'J18.9', desc:'Unspecified pneumonia', pt:'Maria Garcia', conf:88, status:'pending' },
+  { id:'ICD-003', code:'I10', desc:'Essential primary hypertension', pt:'Robert Chen', conf:99, status:'approved' },
+  { id:'ICD-004', code:'M54.5', desc:'Low back pain', pt:'Emily Davis', conf:72, status:'pending' },
+  { id:'ICD-005', code:'F32.1', desc:'Major depressive disorder, single', pt:'Linda Brown', conf:65, status:'rejected' },
+  { id:'ICD-006', code:'Z87.891', desc:'Personal history of nicotine dependence', pt:'Michael Torres', conf:94, status:'pending' },
+];
+
+const cptData = [
+  { code:'99213', desc:'Office/outpatient visit, est. patient – moderate', cat:'E&M', rvu:'1.3', ai:true, status:'Active' },
+  { code:'99214', desc:'Office/outpatient visit, est. patient – high complexity', cat:'E&M', rvu:'1.92', ai:true, status:'Active' },
+  { code:'93000', desc:'Electrocardiogram with interpretation', cat:'Medicine', rvu:'0.61', ai:false, status:'Active' },
+  { code:'71046', desc:'Radiologic exam, chest; 2 views', cat:'Radiology', rvu:'0.22', ai:true, status:'Active' },
+  { code:'36415', desc:'Collection of venous blood by venipuncture', cat:'Pathology', rvu:'0.17', ai:false, status:'Active' },
+  { code:'43239', desc:'EGD with biopsy, single or multiple', cat:'Surgery', rvu:'5.38', ai:true, status:'Review' },
+  { code:'99232', desc:'Subsequent hospital care, moderate complexity', cat:'E&M', rvu:'1.39', ai:true, status:'Active' },
+  { code:'85025', desc:'Blood count; complete (CBC)', cat:'Pathology', rvu:'0.0', ai:false, status:'Active' },
+];
+
+const claimsData = [
+  { id:'CLM-2847', pt:'James Wilson', prov:'Dr. Rodriguez', codes:'E11.65, I10', amt:'$1,240', date:'2025-01-14', status:'Approved' },
+  { id:'CLM-2846', pt:'Maria Garcia', prov:'Dr. Patel', codes:'J18.9, R05', amt:'$3,840', date:'2025-01-14', status:'Pending' },
+  { id:'CLM-2845', pt:'Robert Chen', prov:'Dr. Kim', codes:'I10, E78.5', amt:'$680', date:'2025-01-13', status:'Approved' },
+  { id:'CLM-2844', pt:'Emily Davis', prov:'Dr. Johnson', codes:'M54.5, M48.06', amt:'$920', date:'2025-01-13', status:'Under Review' },
+  { id:'CLM-2843', pt:'Linda Brown', prov:'Dr. Smith', codes:'F32.1, F41.1', amt:'$560', date:'2025-01-12', status:'Denied' },
+  { id:'CLM-2842', pt:'Michael Torres', prov:'Dr. Rodriguez', codes:'Z87.891, J44.1', amt:'$2,100', date:'2025-01-12', status:'Approved' },
+  { id:'CLM-2841', pt:'Susan Lee', prov:'Dr. Patel', codes:'K21.0, K57.30', amt:'$1,750', date:'2025-01-11', status:'Pending' },
+  { id:'CLM-2840', pt:'David Martinez', prov:'Dr. Kim', codes:'N18.3, I12.9', amt:'$4,200', date:'2025-01-11', status:'Approved' },
+];
+
+const billingData = [
+  { num:'RPT-0124', title:'January Medicare Claims', payer:'Medicare', period:'Jan 1-15', billed:'$84,200', collected:'$72,100', adj:'14.3%', status:'Finalized' },
+  { num:'RPT-0123', title:'Medicaid Q4 Summary', payer:'Medicaid', period:'Oct-Dec 2024', billed:'$41,800', collected:'$38,200', adj:'8.6%', status:'Finalized' },
+  { num:'RPT-0122', title:'BlueCross Monthly', payer:'BlueCross', period:'Dec 2024', billed:'$62,400', collected:'$58,900', adj:'5.6%', status:'Finalized' },
+  { num:'RPT-0121', title:'Aetna Claims Report', payer:'Aetna', period:'Dec 2024', billed:'$28,900', collected:'$25,600', adj:'11.4%', status:'Under Review' },
+  { num:'RPT-0120', title:'United Healthcare Q4', payer:'United', period:'Oct-Dec 2024', billed:'$54,000', collected:'$49,200', adj:'8.9%', status:'Finalized' },
+];
+
+const auditData = [
+  { ts:'2025-01-14 14:32', user:'S. Mitchell', action:'Approved ICD Code', rec:'ICD-003 (I10)', st:'Success' },
+  { ts:'2025-01-14 14:15', user:'S. Mitchell', action:'Rejected CPT Code', rec:'CPT 43239', st:'Flagged' },
+  { ts:'2025-01-14 13:50', user:'J. Thompson', action:'Submitted Claim', rec:'CLM-2847', st:'Success' },
+  { ts:'2025-01-14 12:30', user:'S. Mitchell', action:'Modified ICD Code', rec:'ICD-001 (E11.65)', st:'Modified' },
+  { ts:'2025-01-14 11:45', user:'System', action:'AI Batch Suggestion', rec:'38 codes generated', st:'Info' },
+];
+
+const aiSuggestData = [
+  { case:'PT-38291 – James Wilson', note:'Type 2 DM follow-up with HbA1c 8.2%, foot exam performed', suggested:['E11.65','E11.40','Z79.4'], cpts:['99214','99213'], conf:96, reason:'Diagnoses and procedures align with documentation. HbA1c supports E11.65.' },
+  { case:'PT-28472 – Maria Garcia', note:'65F presenting with productive cough, fever 38.8°C, CXR bilateral infiltrates', suggested:['J18.9','R05.9','R50.9'], cpts:['99223','71046'], conf:88, reason:'Bilateral infiltrates consistent with pneumonia. Fever supports J18.9.' },
+  { case:'PT-19283 – Robert Chen', note:'55M hypertension management, lipid panel ordered, statin counseling', suggested:['I10','E78.5','Z71.3'], cpts:['99213','80061'], conf:94, reason:'HTN documented, lipid panel ordered supports E78.5.' },
+];
+
+const pendingData = [
+  { id:'REV-4821', pt:'James Wilson', type:'ICD Validation', codes:'E11.65, E11.40', prio:'High', assigned:'14 Jan', age:'2h' },
+  { id:'REV-4820', pt:'Maria Garcia', type:'CPT Review', codes:'99223, 71046', prio:'High', assigned:'14 Jan', age:'3h' },
+  { id:'REV-4819', pt:'Emily Davis', type:'Claim Review', codes:'CLM-2844', prio:'Medium', assigned:'13 Jan', age:'18h' },
+  { id:'REV-4818', pt:'Linda Brown', type:'ICD Validation', codes:'F32.1, F41.1', prio:'Low', assigned:'13 Jan', age:'1d' },
+  { id:'REV-4817', pt:'Michael Torres', type:'CPT Review', codes:'93000, 99214', prio:'Medium', assigned:'12 Jan', age:'1d' },
+  { id:'REV-4816', pt:'Susan Lee', type:'Claim Review', codes:'CLM-2841', prio:'High', assigned:'11 Jan', age:'2d' },
+];
+
+const leaderboardData = [
+  { name:'Sarah Mitchell', role:'Senior Coder', codes:284, acc:'97.4%', rank:1 },
+  { name:'James Thompson', role:'Coder II', codes:261, acc:'96.8%', rank:2 },
+  { name:'Priya Sharma', role:'Coder II', codes:248, acc:'95.9%', rank:3 },
+  { name:'Carlos Rivera', role:'Coder I', codes:196, acc:'94.2%', rank:4 },
+  { name:'Amy Nguyen', role:'Trainee Coder', codes:143, acc:'91.7%', rank:5 },
+];
+
+// ---- Render Functions ----
+function renderICD() {
+  document.getElementById('icdList').innerHTML = icdData.map(d => {
+    const confClass = d.conf >= 90 ? 'conf-high' : d.conf >= 75 ? 'conf-med' : 'conf-low';
+    const statBadge = d.status === 'approved' ? 'badge-green' : d.status === 'rejected' ? 'badge-red' : 'badge-yellow';
+    return `<div class="code-row">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap">
+          <span class="code-chip">${d.code}</span>
+          <div>
+            <div style="font-size:13.5px;font-weight:600;color:var(--text)">${d.desc}</div>
+            <div style="font-size:11.5px;color:var(--text3);margin-top:2px">Patient: ${d.pt} · Case ${d.id}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="conf-badge ${confClass}">AI ${d.conf}%</span>
+          <span class="badge ${statBadge}">${d.status}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <div style="flex:1"><label class="form-label" style="margin-bottom:3px">Edit Code</label><input class="form-input" value="${d.code}" style="max-width:140px"/></div>
+        <div style="flex:2"><label class="form-label" style="margin-bottom:3px">Review Comment</label><input class="form-input" placeholder="Add a review note..." style="max-width:300px"/></div>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <button class="btn btn-success btn-sm" onclick="approveICD('${d.id}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg> Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectICD('${d.id}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Reject</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function approveICD(id, btn) {
+  const codeField = btn.closest('.code-row')?.querySelector('input.form-input');
+  const overrideCode = codeField ? codeField.value : id;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span>';
+  fetch(`/api/coder/icd/${id}/approve`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ override_code: overrideCode })
+  }).catch(()=>{}).finally(()=>{
+    const row = btn.closest('.code-row');
+    row.style.borderColor = 'var(--success)';
+    row.style.background = 'rgba(16,185,129,.04)';
+    row.style.pointerEvents = 'none';
+    showToast(`Code ${id} approved`, 'success');
+  });
+}
+
+function rejectICD(id, btn) {
+  openRejectModal(id, 'icd');
+}
+
+function renderCPT() {
+  document.getElementById('cptBody').innerHTML = cptData.map(d => `
+    <tr>
+      <td><span class="code-chip">${d.code}</span></td>
+      <td class="td-main" style="max-width:240px">${d.desc}</td>
+      <td><span class="badge badge-blue">${d.cat}</span></td>
+      <td>${d.rvu}</td>
+      <td>${d.ai ? '<span class="badge badge-purple">AI</span>' : '<span class="badge badge-gray">Manual</span>'}</td>
+      <td><span class="badge ${d.status === 'Active' ? 'badge-green' : 'badge-yellow'}">${d.status}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-xs" onclick="showToast('Editing CPT ${d.code}','info')">Edit</button>
+        <button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="showToast('CPT ${d.code} deactivated','error')">Remove</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function renderClaims() {
+  const stMap = { Approved:'badge-green', Pending:'badge-yellow', Denied:'badge-red', 'Under Review':'badge-blue' };
+  document.getElementById('claimsBody').innerHTML = claimsData.map(d => `
+    <tr>
+      <td class="td-main">${d.id}</td>
+      <td>${d.pt}</td>
+      <td>${d.prov}</td>
+      <td><span style="font-family:monospace;font-size:12px;color:var(--primary)">${d.codes}</span></td>
+      <td style="font-weight:600">${d.amt}</td>
+      <td>${d.date}</td>
+      <td><span class="badge ${stMap[d.status]}">${d.status}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-xs" onclick="showToast('Viewing claim ${d.id}','info')">View</button>
+        <button class="btn btn-ghost btn-xs" onclick="openModal('auditModal')">Audit</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function renderBilling() {
+  const stMap = { Finalized:'badge-green', 'Under Review':'badge-yellow', Draft:'badge-gray' };
+  document.getElementById('billingBody').innerHTML = billingData.map(d => `
+    <tr>
+      <td class="td-main">${d.num}</td>
+      <td>${d.title}</td>
+      <td>${d.payer}</td>
+      <td>${d.period}</td>
+      <td style="font-weight:600">${d.billed}</td>
+      <td style="color:var(--success);font-weight:600">${d.collected}</td>
+      <td>${d.adj}</td>
+      <td><span class="badge ${stMap[d.status]}">${d.status}</span></td>
+      <td><button class="btn btn-ghost btn-xs" onclick="showToast('Downloading ${d.num}','success')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PDF</button></td>
+    </tr>`).join('');
+}
+
+function renderAudit() {
+  const stMap = { Success:'badge-green', Flagged:'badge-red', Modified:'badge-yellow', Info:'badge-blue' };
+  document.getElementById('auditBody').innerHTML = auditData.map(d => `
+    <tr><td style="font-size:11.5px">${d.ts}</td><td>${d.user}</td><td>${d.action}</td><td class="td-main" style="font-size:12px">${d.rec}</td><td><span class="badge ${stMap[d.st]}">${d.st}</span></td></tr>`).join('');
+}
+
+// ---- Pending Reviews: loads from API ----
+async function renderPending() {
+  const container = document.getElementById('pendingList');
+  container.innerHTML = `<div style="text-align:center;padding:32px"><span class="spinner"></span><div style="color:var(--text3);font-size:13px;margin-top:10px">Loading pending reviews…</div></div>`;
+  try {
+    const res = await fetch('/api/coder/pending-reviews');
+    const data = res.ok ? await res.json() : null;
+    const list = data?.reviews ?? pendingData; // fallback to mock
+    _renderPendingList(list);
+  } catch(e) {
+    _renderPendingList(pendingData); // offline fallback
+  }
+}
+
+function _renderPendingList(list) {
+  const prioMap = { High:'badge-red', Medium:'badge-yellow', Low:'badge-green' };
+  document.getElementById('pendingList').innerHTML = list.length === 0
+    ? `<div class="card card-p" style="text-align:center;color:var(--text3);padding:40px">No pending reviews — you're all caught up! 🎉</div>`
+    : list.map(d => `
+    <div class="card card-p" id="pending-${d.id}" style="transition:var(--transition)">
+      <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span class="td-main">${d.id}</span>
+            <span class="badge ${prioMap[d.prio]}">${d.prio}</span>
+            <span class="badge badge-blue">${d.type}</span>
+          </div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px">
+            Patient: <strong style="color:var(--text)">${d.pt}</strong>
+          </div>
+          <!-- Inline code edit chips -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase">AI Codes:</span>
+            ${(d.codes||'').split(',').map(c => `<span class="code-chip" style="font-size:11.5px">${c.trim()}</span>`).join('')}
+          </div>
+          <!-- Editable override field -->
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="form-input" id="edit-codes-${d.id}" value="${d.codes}" placeholder="Override codes (comma-separated)" style="max-width:280px;font-family:monospace;font-size:12px"/>
+            <span style="font-size:11px;color:var(--text3)">edit to override AI codes</span>
+          </div>
+        </div>
+        <div style="text-align:right;min-width:90px;flex-shrink:0">
+          <div style="font-size:11px;color:var(--text3)">Assigned ${d.assigned}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--warning);margin-top:2px">Age: ${d.age}</div>
+        </div>
+      </div>
+      <!-- Action buttons row -->
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-success btn-sm" onclick="approvePending('${d.id}',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg> Approve
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="draftPending('${d.id}',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Save Draft
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('icd',null)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Review Codes
+        </button>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="openRejectModal('${d.id}','pending')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Reject
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function approvePending(id, btn) {
+  const codesField = document.getElementById(`edit-codes-${id}`);
+  const overrideCodes = codesField ? codesField.value : null;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span>';
+  try {
+    await fetch(`/api/coder/reviews/${id}/approve`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ override_codes: overrideCodes })
+    });
+  } catch(e) {}
+  const card = document.getElementById(`pending-${id}`);
+  if(card){ card.style.borderColor='var(--success)'; card.style.background='rgba(16,185,129,.04)'; card.style.opacity='.6'; card.style.pointerEvents='none'; }
+  showToast(`Case ${id} approved successfully`, 'success');
+}
+
+async function draftPending(id, btn) {
+  const codesField = document.getElementById(`edit-codes-${id}`);
+  const notes = codesField ? codesField.value : '';
+  btn.disabled = true;
+  try {
+    await fetch(`/api/coder/reviews/${id}/draft`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ draft_codes: notes })
+    });
+  } catch(e) {}
+  btn.disabled = false;
+  showToast(`Case ${id} saved as draft`, 'info');
+}
+
+// ---- AI Suggestions: loads from API ----
+async function renderAISuggestions() {
+  const container = document.getElementById('aiSuggestions');
+  container.innerHTML = `<div style="text-align:center;padding:32px"><span class="spinner"></span><div style="color:var(--text3);font-size:13px;margin-top:10px">Fetching AI suggestions from server…</div></div>`;
+  try {
+    const res = await fetch('/api/coder/ai-suggestions');
+    const data = res.ok ? await res.json() : null;
+    const list = data?.suggestions ?? aiSuggestData;
+    _renderAISuggestions(list);
+  } catch(e) {
+    _renderAISuggestions(aiSuggestData);
+  }
+}
+
+function _renderAISuggestions(list) {
+  document.getElementById('aiSuggestions').innerHTML = list.map((d, i) => `
+    <div class="card card-p" id="aisugg-${d.case.replace(/\s/g,'_')}-${i}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${d.case}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;max-width:500px">${d.note}</div>
+        </div>
+        <span class="conf-badge ${d.conf >= 90 ? 'conf-high' : 'conf-med'}">AI ${d.conf}% confidence</span>
+      </div>
+
+      <!-- ICD Codes row with inline editable field -->
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-bottom:6px">Suggested ICD Codes</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${d.suggested.map(c => `<span class="code-chip">${c}</span>`).join('')}</div>
+          <input class="form-input" id="override-icd-${i}" value="${d.suggested.join(', ')}" placeholder="Edit ICD codes (comma-separated)" style="font-family:monospace;font-size:12px;margin-top:4px"/>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-bottom:6px">Suggested CPT Codes</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${d.cpts.map(c => `<span class="code-chip" style="color:var(--accent);background:rgba(6,182,212,.08)">${c}</span>`).join('')}</div>
+          <input class="form-input" id="override-cpt-${i}" value="${d.cpts.join(', ')}" placeholder="Edit CPT codes (comma-separated)" style="font-family:monospace;font-size:12px;margin-top:4px"/>
+        </div>
+      </div>
+
+      <div style="background:rgba(30,64,175,.05);border-radius:.625rem;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--text2);border-left:3px solid var(--primary)">
+        <strong>AI Reasoning:</strong> ${d.reason}
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-success btn-sm" onclick="acceptAISuggestion(${i}, this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg> Accept
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="draftAISuggestion(${i}, this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Save Draft
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('icd',null)">Review Individually</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="openRejectModal('${d.case}','ai-${i}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Reject
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function acceptAISuggestion(idx, btn) {
+  const icd = document.getElementById(`override-icd-${idx}`)?.value;
+  const cpt = document.getElementById(`override-cpt-${idx}`)?.value;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span>';
+  try {
+    await fetch('/api/coder/ai-suggestions/accept', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ index: idx, icd_codes: icd, cpt_codes: cpt })
+    });
+  } catch(e) {}
+  btn.closest('.card').style.borderColor = 'var(--success)';
+  btn.closest('.card').style.background = 'rgba(16,185,129,.04)';
+  btn.closest('.card').style.opacity = '.6';
+  btn.closest('.card').style.pointerEvents = 'none';
+  showToast('AI suggestion accepted with your codes', 'success');
+}
+
+async function draftAISuggestion(idx, btn) {
+  const icd = document.getElementById(`override-icd-${idx}`)?.value;
+  const cpt = document.getElementById(`override-cpt-${idx}`)?.value;
+  btn.disabled = true;
+  try {
+    await fetch('/api/coder/ai-suggestions/draft', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ index: idx, icd_codes: icd, cpt_codes: cpt })
+    });
+  } catch(e) {}
+  btn.disabled = false;
+  showToast('Saved as draft — you can come back to this', 'info');
+}
+
+// ---- Reject Modal ----
+function openRejectModal(targetId, targetType) {
+  document.getElementById('rejectTargetId').value = targetId;
+  document.getElementById('rejectTargetType').value = targetType;
+  document.getElementById('rejectReasonSelect').value = '';
+  document.getElementById('rejectCustomReason').value = '';
+  document.getElementById('rejectNotes').value = '';
+  document.getElementById('customReasonWrap').style.display = 'none';
+  document.getElementById('rejectModalSubtitle').textContent = `Rejecting: ${targetId}`;
+  openModal('rejectModal');
+}
+
+function toggleCustomReason(val) {
+  document.getElementById('customReasonWrap').style.display = val === 'other' ? 'block' : 'none';
+}
+
+async function submitReject() {
+  const id = document.getElementById('rejectTargetId').value;
+  const type = document.getElementById('rejectTargetType').value;
+  const reason = document.getElementById('rejectReasonSelect').value;
+  const custom = document.getElementById('rejectCustomReason').value;
+  const notes = document.getElementById('rejectNotes').value;
+
+  if (!reason) { showToast('Please select a rejection reason', 'error'); return; }
+
+  const btn = document.getElementById('rejectSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> Submitting…';
+
+  const payload = { id, type, reason: reason === 'other' ? custom : reason, notes };
+  try {
+    await fetch(`/api/coder/reject`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {}
+
+  // Update UI based on type
+  if (type === 'pending') {
+    const card = document.getElementById(`pending-${id}`);
+    if(card){ card.style.borderColor='var(--danger)'; card.style.background='rgba(239,68,68,.04)'; card.style.opacity='.6'; card.style.pointerEvents='none'; }
+  } else if (type.startsWith('ai-')) {
+    // AI suggestion card — fade it
+    const cards = document.querySelectorAll('#aiSuggestions .card');
+    const idx = parseInt(type.split('-')[1]);
+    if(cards[idx]){ cards[idx].style.borderColor='var(--danger)'; cards[idx].style.opacity='.6'; cards[idx].style.pointerEvents='none'; }
+  } else if (type === 'icd') {
+    // ICD row already handled in rejectICD
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Confirm Rejection';
+  closeModal('rejectModal');
+  showToast(`${id} rejected — doctor will be notified`, 'error');
+}
+
+function renderLeaderboard() {
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  document.getElementById('leaderboard').innerHTML = leaderboardData.map((d, i) => `
+    <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:20px;width:32px;text-align:center">${medals[i]}</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${d.name.split(' ').map(n=>n[0]).join('')}</div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:var(--text)">${d.name}</div><div style="font-size:11.5px;color:var(--text3)">${d.role}</div></div>
+      <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--primary)">${d.codes} codes</div><div style="font-size:11.5px;color:var(--success)">${d.acc} accuracy</div></div>
+    </div>`).join('');
+}
+
+function renderRecentValidations() {
+  const recent = [
+    { code:'I10', pt:'R. Chen', status:'approved', time:'5m' },
+    { code:'E11.65', pt:'J. Wilson', status:'pending', time:'12m' },
+    { code:'J18.9', pt:'M. Garcia', status:'pending', time:'28m' },
+    { code:'F32.1', pt:'L. Brown', status:'rejected', time:'1h' },
+  ];
+  document.getElementById('recentValidations').innerHTML = recent.map(r => {
+    const cls = r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-yellow';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span class="code-chip" style="font-size:12px">${r.code}</span>
+      <span style="flex:1;font-size:12.5px;color:var(--text2)">${r.pt}</span>
+      <span class="badge ${cls}">${r.status}</span>
+      <span style="font-size:11px;color:var(--text3)">${r.time}</span>
+    </div>`;
+  }).join('');
+}
+
+// ---- Charts ----
+let charts = {};
+function getChartDefaults() {
+  const dark = document.documentElement.classList.contains('dark');
+  return { gridColor: dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)', textColor: dark ? '#94A3B8' : '#64748B' };
+}
+function updateChartTheme() {
+  Object.values(charts).forEach(c => {
+    if (!c) return;
+    const { gridColor, textColor } = getChartDefaults();
+    if (c.options?.scales?.x?.ticks) c.options.scales.x.ticks.color = textColor;
+    if (c.options?.scales?.y?.ticks) c.options.scales.y.ticks.color = textColor;
+    if (c.options?.scales?.x?.grid) c.options.scales.x.grid.color = gridColor;
+    if (c.options?.scales?.y?.grid) c.options.scales.y.grid.color = gridColor;
+    if (c.options?.plugins?.legend?.labels) c.options.plugins.legend.labels.color = textColor;
+    c.update();
+  });
+}
+
+function initCharts() {
+  const { gridColor, textColor } = getChartDefaults();
+  const baseScales = { x:{ ticks:{color:textColor,font:{size:11}}, grid:{color:gridColor,drawBorder:false} }, y:{ ticks:{color:textColor,font:{size:11}}, grid:{color:gridColor,drawBorder:false} } };
+
+  // Volume chart
+  const vc = document.getElementById('volumeChart');
+  if (vc) charts.volume = new Chart(vc, { type:'bar', data:{ labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets:[{ label:'ICD Codes', data:[42,58,35,67,73,28,19], backgroundColor:'rgba(30,64,175,.8)', borderRadius:6 },{ label:'CPT Codes', data:[31,44,28,52,61,20,15], backgroundColor:'rgba(6,182,212,.7)', borderRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{color:textColor,font:{size:11},boxWidth:12} } }, scales:baseScales }});
+
+  // Donut chart
+  const dc = document.getElementById('donutChart');
+  if (dc) charts.donut = new Chart(dc, { type:'doughnut', data:{ labels:['Internal Med','Cardiology','Orthopedics','Neurology','Radiology','Other'], datasets:[{ data:[32,18,14,12,15,9], backgroundColor:['#1E40AF','#06B6D4','#10B981','#F59E0B','#8B5CF6','#94A3B8'], borderWidth:0, hoverOffset:8 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{ legend:{ position:'right', labels:{color:textColor,font:{size:11},boxWidth:12,padding:12} } } }});
+
+  // Accuracy chart
+  const ac = document.getElementById('accuracyChart');
+  if (ac) charts.accuracy = new Chart(ac, { type:'line', data:{ labels:['Aug','Sep','Oct','Nov','Dec','Jan'], datasets:[{ label:'Accuracy %', data:[95.2,96.1,96.8,96.4,97.1,97.4], borderColor:'#1E40AF', backgroundColor:'rgba(30,64,175,.08)', borderWidth:2.5, tension:.4, fill:true, pointBackgroundColor:'#1E40AF', pointRadius:4, pointHoverRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ ...baseScales, y:{ ...baseScales.y, min:94, max:99 } } }});
+
+  // Billing chart
+  const bc = document.getElementById('billingChart');
+  if (bc) charts.billing = new Chart(bc, { type:'bar', data:{ labels:['Aug','Sep','Oct','Nov','Dec','Jan'], datasets:[{ label:'Billed', data:[48200,52400,61200,58900,64100,84200], backgroundColor:'rgba(30,64,175,.15)', borderColor:'#1E40AF', borderWidth:2, borderRadius:6, type:'bar' },{ label:'Collected', data:[43100,48900,57200,54200,60100,72100], backgroundColor:'rgba(16,185,129,.7)', borderRadius:6, type:'bar' }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{color:textColor,font:{size:11},boxWidth:12} } }, scales:baseScales }});
+
+  // Analytics bar
+  const ab = document.getElementById('analyticsBar');
+  if (ab) charts.analyticsBar = new Chart(ab, { type:'bar', data:{ labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets:[{ label:'Reviewed', data:[48,62,55,71,80,32,24], backgroundColor:'rgba(30,64,175,.75)', borderRadius:6 },{ label:'Approved', data:[44,59,50,67,75,29,22], backgroundColor:'rgba(16,185,129,.7)', borderRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{color:textColor,font:{size:11},boxWidth:12} } }, scales:baseScales }});
+
+  // Rejection chart
+  const rc = document.getElementById('rejectionChart');
+  if (rc) charts.rejection = new Chart(rc, { type:'doughnut', data:{ labels:['Missing modifier','Invalid dx','Duplicate claim','Non-covered service','Other'], datasets:[{ data:[35,25,18,14,8], backgroundColor:['#EF4444','#F59E0B','#8B5CF6','#06B6D4','#94A3B8'], borderWidth:0, hoverOffset:6 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{ position:'right', labels:{color:textColor,font:{size:11},boxWidth:12,padding:10} } } }});
+}
+
+// ---- Search / Filter ----
+function handleSearch(v) { if (v) showToast(`Searching for "${v}"...`, 'info'); }
+function filterCPT(v) { v; }
+function filterCPTCat(v) { v; }
+function filterClaims(v) { v; }
+function filterClaimStatus(v) { v; }
+
+// ---- Init ----
+window.addEventListener('DOMContentLoaded', () => {
+  renderICD();
+  renderCPT();
+  renderClaims();
+  renderBilling();
+  renderAudit();
+  renderPending();
+  renderAISuggestions();
+  renderLeaderboard();
+  renderRecentValidations();
+  setTimeout(initCharts, 100);
+
+  // Welcome toast
+  setTimeout(() => showToast('Welcome back, Sarah! 14 pending reviews.', 'info'), 800);
+});
+
+// Responsive sidebar
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) { closeSidebar(); }
+});
+</script>
+</body>
+</html>

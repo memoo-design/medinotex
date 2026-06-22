@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="MediNotex – AI-powered clinical note summarization, automated ICD/CPT medical coding, and secure patient engagement for modern healthcare workflows." />
+  <title>MediNotex – AI Healthcare Documentation &amp; Patient Engagement</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"
+  />
+ <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div id="page-loader">
+  <div class="loader-ring"></div>
+</div>
+
+<nav id="mainNav" class="navbar navbar-expand-lg py-3" aria-label="Main navigation">
+  <div class="container">
+
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#hero">
+      <div class="brand-icon">
+        <i class="bi bi-activity"></i>
+      </div>
+      <span class="fw-bold tracking-tight">MediNotex</span>
+    </a>
+
+    <button
+      class="navbar-toggler border-0 shadow-none"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarContent"
+      aria-controls="navbarContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <i class="bi bi-list fs-3" style="color: var(--primary)"></i>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav mx-auto gap-2 text-center text-lg-start">
+        <li class="nav-item"><a class="nav-link px-3" href="#hero">Home</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="#patient-services">Patient Services</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="#features">Features</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="#how-it-works">How It Works</a></li>
+        <li class="nav-item"><a class="nav-link px-3" href="#preview">Dashboards</a></li>
+      </ul>
+
+      <div class="d-flex flex-column flex-lg-row align-items-center justify-content-center gap-3 mt-3 mt-lg-0">
+        
+        <div class="dropdown" id="getStartedDropdownContainer">
+          <button 
+            class="btn btn-outline-primary btn-sm px-3 dropdown-toggle fw-medium" 
+            type="button" 
+            id="getStartedDropdown" 
+            data-bs-toggle="dropdown"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            Access &amp; Registration
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 mt-2" aria-labelledby="getStartedDropdown">
+            <li>
+              <button type="button" class="dropdown-item rounded-2 py-2 small" data-bs-toggle="modal" data-bs-target="#patientRegisterModal">
+                <i class="bi bi-person-plus me-2 text-primary"></i>Patient Registration
+              </button>
+            </li>
+            <li>
+              <button type="button" class="dropdown-item rounded-2 py-2 small" data-bs-toggle="modal" data-bs-target="#requestDemoModal">
+                <i class="bi bi-display me-2 text-secondary"></i>Request a Demo
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <a href="login.html" class="btn btn-primary btn-sm px-4 shadow-sm fw-medium">
+          Login <i class="bi bi-box-arrow-in-right ms-1"></i>
+        </a>
+        
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+<section id="hero">
+  <div class="container">
+    <div class="row align-items-center min-vh-100 py-5 g-5">
+
+      <div class="col-lg-6">
+        <div class="hero-badge reveal">
+          <span class="hero-badge-dot"></span>
+          Enterprise Role-Based Healthcare Ecosystem
+        </div>
+
+        <h1 class="hero-title reveal delay-1" style="font-size: 2.8rem; line-height: 1.2;">
+          AI-Powered Healthcare Documentation <br />
+          <span class="gradient-text">&amp; Patient Engagement</span>
+        </h1>
+
+        <p class="hero-desc reveal delay-2">
+          Transform clinical notes into structured summaries, generate ICD-10/CPT codes, and provide patients with secure access to their healthcare information. Built seamlessly for hospitals, clinics, doctors, medical coders, and patients.
+        </p>
+
+        <div class="d-flex flex-wrap gap-3 reveal delay-3">
+          <button type="button" class="btn btn-primary lg-btn py-3 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#requestDemoModal">
+            Request a Demo <i class="bi bi-arrow-right ms-2"></i>
+          </button>
+          <button type="button" class="btn btn-outline-secondary lg-btn py-3 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#patientRegisterModal">
+            Patient Registration
+          </button>
+          <a href="login.html" class="btn btn-link link-dark text-decoration-none d-flex align-items-center gap-1 px-2">
+            <i class="bi bi-box-arrow-in-right"></i> Login
+          </a>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-4 mt-5 reveal delay-4">
+          <div class="d-flex align-items-center gap-2" style="font-size:0.85rem; color:var(--text-muted)">
+            <i class="bi bi-cpu-fill text-primary"></i> ✓ AI-Powered Documentation
+          </div>
+          <div class="d-flex align-items-center gap-2" style="font-size:0.85rem; color:var(--text-muted)">
+            <i class="bi bi-person-bounding-box text-success"></i> ✓ Secure Patient Portal
+          </div>
+          <div class="d-flex align-items-center gap-2" style="font-size:0.85rem; color:var(--text-muted)">
+            <i class="bi bi-shield-lock-fill text-warning"></i> ✓ Role-Based Access
+          </div>
+          <div class="d-flex align-items-center gap-2" style="font-size:0.85rem; color:var(--text-muted)">
+            <i class="bi bi-check-circle-fill text-info"></i> ✓ HIPAA-Ready Architecture
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 reveal-right">
+        <div class="hero-visual position-relative px-3">
+
+          <div class="float-mini float-mini-1">
+            <div class="float-icon" style="background:var(--green-light)">🩺</div>
+            <div>
+              <div style="font-size:0.7rem;color:var(--text-muted)">AI Accuracy</div>
+              <div style="color:var(--green)">98.4%</div>
+            </div>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="dash-header">
+              <div class="dash-header-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="dash-header-title">MediNotex · Doctor Dashboard</div>
+            </div>
+
+            <div class="dash-body">
+              <div class="dash-stat-row">
+                <div class="dash-stat">
+                  <div class="dash-stat-val">124</div>
+                  <div class="dash-stat-label">Notes Today</div>
+                </div>
+                <div class="dash-stat">
+                  <div class="dash-stat-val">3.2s</div>
+                  <div class="dash-stat-label">Avg. Process</div>
+                </div>
+                <div class="dash-stat">
+                  <div class="dash-stat-val">98%</div>
+                  <div class="dash-stat-label">Accuracy</div>
+                </div>
+              </div>
+
+              <div class="dash-note-card">
+                <div class="dash-note-header">
+                  <div class="dash-note-tag">AI SUMMARY</div>
+                  <div class="dash-note-title">Patient: John D. — Cardiology Visit</div>
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:10px;line-height:1.6">
+                  45-year-old male presents with chest pain, mild dyspnea on exertion.
+                  BP 140/90. ECG shows sinus rhythm. Recommend echo and statin therapy.
+                </div>
+                <div class="dash-note-bar mb-2">
+                  <div class="dash-note-bar-fill" style="width:87%"></div>
+                </div>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:8px">Confidence: 87% · Processed in 2.1s</div>
+                <div class="dash-code-pills">
+                  <span class="icd-pill">ICD: I10</span>
+                  <span class="icd-pill">ICD: R07.9</span>
+                  <span class="cpt-pill">CPT: 93000</span>
+                  <span class="cpt-pill">CPT: 99214</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="float-mini float-mini-2">
+            <div class="float-icon" style="background:var(--primary-glow)">📋</div>
+            <div>
+              <div style="font-size:0.7rem;color:var(--text-muted)">Codes Generated</div>
+              <div style="color:var(--primary)">+12,400</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="stats" class="bg-light py-5">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-6 col-lg-3 reveal delay-1">
+        <div class="stat-card text-center p-3 bg-white shadow-sm rounded">
+          <div class="stat-icon-wrap fs-3">📄</div>
+          <div class="stat-number fw-bold fs-4">2,400,000+</div>
+          <div class="stat-label text-muted small">Notes Processed</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 reveal delay-2">
+        <div class="stat-card text-center p-3 bg-white shadow-sm rounded">
+          <div class="stat-icon-wrap fs-3">🎯</div>
+          <div class="stat-number fw-bold fs-4">98.4%</div>
+          <div class="stat-label text-muted small">Coding Accuracy</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 reveal delay-3">
+        <div class="stat-card text-center p-3 bg-white shadow-sm rounded">
+          <div class="stat-icon-wrap fs-3">🩺</div>
+          <div class="stat-number fw-bold fs-4">5,200+</div>
+          <div class="stat-label text-muted small">Active Doctors</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 reveal delay-4">
+        <div class="stat-card text-center p-3 bg-white shadow-sm rounded">
+          <div class="stat-icon-wrap fs-3">👥</div>
+          <div class="stat-number fw-bold fs-4">45,000+</div>
+          <div class="stat-label text-muted small">Active Patients</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="patient-services" class="py-5">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <div class="section-eyebrow justify-content-center text-primary text-uppercase fw-bold small mb-2">Patient Hub</div>
+      <h2 class="section-title fw-bold">Empowering Patients with Connected Care</h2>
+      <p class="section-subtitle text-muted mx-auto" style="max-width: 600px;">
+        Access your holistic medical history, manage timelines, and securely chat with your physicians anywhere, anytime.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4 reveal delay-1">
+        <div class="card h-100 border-0 shadow-sm p-4 transition-card hover-lift">
+          <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-3 p-3 mb-4 fs-4" style="width: 3.5rem; height: 3.5rem;">
+            <i class="bi bi-person-workspace"></i>
+          </div>
+          <h4 class="fw-bold h5 mb-3">Patient Portal</h4>
+          <p class="text-muted small mb-0">Access healthcare records, reports, and medical history securely through a responsive dashboard environment.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-2">
+        <div class="card h-100 border-0 shadow-sm p-4 transition-card hover-lift">
+          <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-3 p-3 mb-4 fs-4" style="width: 3.5rem; height: 3.5rem;">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+          <h4 class="fw-bold h5 mb-3">Appointment Management</h4>
+          <p class="text-muted small mb-0">Schedule, reschedule, and track upcoming or historical appointments directly with your assigned healthcare providers.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-3">
+        <div class="card h-100 border-0 shadow-sm p-4 transition-card hover-lift">
+          <div class="d-inline-flex align-items-center justify-content-center bg-info-subtle text-info rounded-3 p-3 mb-4 fs-4" style="width: 3.5rem; height: 3.5rem;">
+            <i class="bi bi-file-earmark-medical"></i>
+          </div>
+          <h4 class="fw-bold h5 mb-3">Medical Reports Access</h4>
+          <p class="text-muted small mb-0">View clinical summaries, structural diagnoses, and treatment plans approved by validated encoders and physicians.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-1">
+        <div class="card h-100 border-0 shadow-sm p-4 transition-card hover-lift">
+          <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-3 p-3 mb-4 fs-4" style="width: 3.5rem; height: 3.5rem;">
+            <i class="bi bi-bell"></i>
+          </div>
+          <h4 class="fw-bold h5 mb-3">Notifications &amp; Alerts</h4>
+          <p class="text-muted small mb-0">Receive automated push notifications, calendar reminders, and status modifications concerning your healthcare roadmap.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-2">
+        <div class="card h-100 border-0 shadow-sm p-4 transition-card hover-lift">
+          <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-3 p-3 mb-4 fs-4" style="width: 3.5rem; height: 3.5rem;">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h4 class="fw-bold h5 mb-3">Secure Communication</h4>
+          <p class="text-muted small mb-0">Connect directly with care units and specialists using end-to-end encrypted compliance messaging portals.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-3">
+        <div class="card h-100 border-0 shadow-sm p-4 transition-card hover-lift">
+          <div class="d-inline-flex align-items-center justify-content-center bg-purple-subtle text-purple rounded-3 p-3 mb-4 fs-4" style="width: 3.5rem; height: 3.5rem; background:#f3e8ff; color:#9333ea;">
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+          <h4 class="fw-bold h5 mb-3">Health History Tracking</h4>
+          <p class="text-muted small mb-0">Maintain a centralized timeline framework tracking clinical diagnoses, prescriptions, and historical healthcare metrics.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="bg-light py-5">
+  <div class="container">
+
+    <div class="text-center mb-5 reveal">
+      <div class="section-eyebrow justify-content-center">Platform Features</div>
+      <h2 class="section-title">End-to-End Clinical Automation &amp; Patient Portals</h2>
+      <p class="section-subtitle">
+        An advanced healthcare hub built across multiple organizational lines — bridging medical artificial intelligence execution directly into modern patient care interfaces.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4 reveal delay-1">
+        <div class="feature-card">
+          <div class="feature-icon fi-blue">🤖</div>
+          <div class="feature-title">AI Clinical Summarization</div>
+          <p class="feature-desc">Transformer-based NLP models distill lengthy clinical narratives into concise, structured notes under 3 seconds preserving details perfectly.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-2">
+        <div class="feature-card">
+          <div class="feature-icon fi-cyan">🏷️</div>
+          <div class="feature-title">ICD/CPT Code Generation</div>
+          <p class="feature-desc">Maps medical statements to verified ICD-10-CM diagnostic entries and billing procedure lists, shrinking overhead up to 80%.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-3">
+        <div class="feature-card">
+          <div class="feature-icon fi-green">🔒</div>
+          <div class="feature-title">Patient Dashboard Portal</div>
+          <p class="feature-desc">Dedicated dashboard designed for patients to check lab results, download treatment timelines, and run health summaries instantly.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-1">
+        <div class="feature-card">
+          <div class="feature-icon fi-violet">📅</div>
+          <div class="feature-title">Appointment Scheduling</div>
+          <p class="feature-desc">Integrated calendar engine allows automated tracking, provider synchronization, and easy consultation management for user accounts.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-2">
+        <div class="feature-card">
+          <div class="feature-icon fi-orange">📨</div>
+          <div class="feature-title">Report Sharing &amp; Messaging</div>
+          <p class="feature-desc">Securely pass summaries between internal entities, external specialists, or transfer code structures safely into billing arrays.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-3">
+        <div class="feature-card">
+          <div class="feature-icon fi-rose">📑</div>
+          <div class="feature-title">Patient History Management</div>
+          <p class="feature-desc">Maintains structured long-term charts tracking clinical documentation modifications, cross-referenced medications, and timeline logs.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" class="py-5">
+  <div class="container">
+
+    <div class="text-center mb-5 reveal">
+      <div class="section-eyebrow justify-content-center">Ecosystem Workflow</div>
+      <h2 class="section-title">The Unified Healthcare Timeline</h2>
+      <p class="section-subtitle">
+        How MediNotex connects patient engagement smoothly with AI clinical documentation and technical validation queues.
+      </p>
+    </div>
+
+    <div class="position-relative mt-5">
+      <div class="position-absolute top-50 start-50 translate-middle d-none d-lg-block bg-primary-subtle" style="width: 85%; height: 4px; z-index: 1;"></div>
+      
+      <div class="row g-4 position-relative" style="z-index: 2;">
+        <div class="col-sm-6 col-lg-2 reveal delay-1">
+          <div class="text-center">
+            <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle mx-auto mb-3 shadow" style="width: 3rem; height: 3rem; font-weight: 700;">1</div>
+            <div class="bg-white border rounded p-3 shadow-sm h-100">
+              <div class="fs-4 mb-2">👤</div>
+              <h5 class="fw-bold small-title h6">Patient Registration</h5>
+              <p class="text-muted small mb-0" style="font-size: 0.78rem;">Patient signs up via secure portal, creating their localized demographic profile.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-2 reveal delay-2">
+          <div class="text-center">
+            <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle mx-auto mb-3 shadow" style="width: 3rem; height: 3rem; font-weight: 700;">2</div>
+            <div class="bg-white border rounded p-3 shadow-sm h-100">
+              <div class="fs-4 mb-2">📅</div>
+              <h5 class="fw-bold small-title h6">Appointment Creation</h5>
+              <p class="text-muted small mb-0" style="font-size: 0.78rem;">Consultation windows are booked online and matched to physician availability matrix panels.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-2 reveal delay-3">
+          <div class="text-center">
+            <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle mx-auto mb-3 shadow" style="width: 3rem; height: 3rem; font-weight: 700;">3</div>
+            <div class="bg-white border rounded p-3 shadow-sm h-100">
+              <div class="fs-4 mb-2">🩺</div>
+              <h5 class="fw-bold small-title h6">Doctor Consultation</h5>
+              <p class="text-muted small mb-0" style="font-size: 0.78rem;">The visit occurs; the provider captures the encounter clinical notes or vocal recording transcriptions.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-2 reveal delay-4">
+          <div class="text-center">
+            <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle mx-auto mb-3 shadow" style="width: 3rem; height: 3rem; font-weight: 700;">4</div>
+            <div class="bg-white border rounded p-3 shadow-sm h-100">
+              <div class="fs-4 mb-2">🧠</div>
+              <h5 class="fw-bold small-title h6">AI Summarization</h5>
+              <p class="text-muted small mb-0" style="font-size: 0.78rem;">The secure NLP engine analyzes entities, translating unstructured data to core metrics and ICD/CPT tables.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-2 reveal delay-5">
+          <div class="text-center">
+            <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle mx-auto mb-3 shadow" style="width: 3rem; height: 3rem; font-weight: 700;">5</div>
+            <div class="bg-white border rounded p-3 shadow-sm h-100">
+              <div class="fs-4 mb-2">✅</div>
+              <h5 class="fw-bold small-title h6">Medical Validation</h5>
+              <p class="text-muted small mb-0" style="font-size: 0.78rem;">Certified clinical coders audit AI assertions, optimizing metrics before data exports run.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-2 reveal delay-6">
+          <div class="text-center">
+            <div class="d-flex align-items-center justify-content-center bg-success text-white rounded-circle mx-auto mb-3 shadow" style="width: 3rem; height: 3rem; font-weight: 700;">6</div>
+            <div class="bg-white border rounded p-3 shadow-sm h-100">
+              <div class="fs-4 mb-2">📥</div>
+              <h5 class="fw-bold small-title h6">Report Delivery</h5>
+              <p class="text-muted small mb-0" style="font-size: 0.78rem;">Final verified clinical health logs automatically deploy inside the secure patient layout.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="preview" class="bg-light py-5">
+  <div class="container">
+
+    <div class="text-center mb-5 reveal">
+      <div class="section-eyebrow justify-content-center">Live Previews</div>
+      <h2 class="section-title">See the Platform in Action</h2>
+      <p class="section-subtitle">
+        Toggle between tailored interfaces configured cleanly for individual stakeholder environments.
+      </p>
+    </div>
+
+    <div class="preview-frame mb-5 reveal">
+      <div class="preview-topbar bg-primary text-white p-3 d-flex align-items-center justify-content-between rounded-top">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-activity"></i>
+          <span class="fw-bold small">MediNotex · Doctor Dashboard Interface</span>
+        </div>
+        <div class="badge bg-success">● Active Provider Connection</div>
+      </div>
+      <div class="bg-white border border-top-0 rounded-bottom p-3">
+        <div class="row g-3">
+          <div class="col-md-3 border-end">
+            <h6 class="fw-bold text-muted small px-2">EHR Ingestion Queue</h6>
+            <div class="list-group list-group-flush small">
+              <a href="#" class="list-group-item list-group-item-action active border-0 rounded">John D. — Cardiology</a>
+              <a href="#" class="list-group-item list-group-item-action border-0">Sarah M. — Pulmonology</a>
+              <a href="#" class="list-group-item list-group-item-action border-0">Alex R. — Orthopedics</a>
+            </div>
+          </div>
+          <div class="col-md-6 border-end">
+            <span class="badge bg-primary-subtle text-primary mb-2" style="font-size: 0.7rem;">Automated Real-Time AI Generation</span>
+            <div class="border rounded p-3 bg-light-subtle mb-2 small" style="font-size: 0.8rem; line-height:1.5;">
+              <strong>Clinical Assessment Summary:</strong> Patient presents with persistent chest pain tracking along left arm. BP reading shows 140/90 mmHg. Electrocardiogram patterns reveal steady sinus rhythm without immediate acute ST elevation anomalies. Diagnosis highlights essential hypertension paired with atypical localized thoracic tracking logs.
+            </div>
+            <div class="d-flex flex-wrap gap-1 mt-2">
+              <span class="badge bg-info text-dark small" style="font-size:0.7rem;">ICD-10: I10</span>
+              <span class="badge bg-info text-dark small" style="font-size:0.7rem;">ICD-10: R07.9</span>
+              <span class="badge bg-secondary text-white small" style="font-size:0.7rem;">CPT: 99214</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <h6 class="fw-bold text-muted small">Daily Performance</h6>
+            <div class="small mt-2">
+              <div class="mb-1 d-flex justify-content-between text-muted" style="font-size: 0.75rem;"><span>Charts Summarized</span><strong>124</strong></div>
+              <div class="progress" style="height: 6px;"><div class="progress-bar bg-success" style="width: 82%;"></div></div>
+              <div class="mb-1 mt-2 d-flex justify-content-between text-muted" style="font-size: 0.75rem;"><span>Avg NLP Speed</span><strong>3.2s</strong></div>
+              <div class="progress" style="height: 6px;"><div class="progress-bar bg-primary" style="width: 90%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-frame mb-5 reveal">
+      <div class="preview-topbar bg-dark text-white p-3 d-flex align-items-center justify-content-between rounded-top" style="background: linear-gradient(90deg, #111827, #1f2937)!important;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-code-square"></i>
+          <span class="fw-bold small">MediNotex · Billing &amp; Coding Audit Panel</span>
+        </div>
+        <div class="badge bg-warning text-dark">● Pending Validation Queue: 8</div>
+      </div>
+      <div class="bg-white border border-top-0 rounded-bottom p-3">
+        <div class="row g-3">
+          <div class="col-md-4 border-end">
+            <h6 class="fw-bold text-muted small">Validation Queue Items</h6>
+            <div class="list-group list-group-flush small">
+              <div class="list-group-item d-flex justify-content-between align-items-center bg-light fw-bold">
+                <span>John D. (Cardiology)</span><span class="badge bg-danger rounded-pill">High Conf</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center text-muted">
+                <span>Sarah M. (Pulmonology)</span><span>Pending</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <h6 class="fw-bold small mb-2 text-primary">Cross-Reference Validation Interface</h6>
+            <div class="table-responsive small" style="font-size: 0.78rem;">
+              <table class="table table-bordered table-sm">
+                <thead class="bg-light">
+                  <tr><th>Code Type</th><th>Suggested Entry</th><th>AI Confidence</th><th>Audit State</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>ICD-10</td><td>I10 (Essential Hypertension)</td><td>99%</td><td><span class="text-success">✓ Verified</span></td></tr>
+                  <tr><td>ICD-10</td><td>R07.9 (Chest Pain Unspecified)</td><td>94%</td><td><span class="text-success">✓ Verified</span></td></tr>
+                  <tr><td>CPT Code</td><td>99214 (Outpatient Visit Level 4)</td><td>87%</td><td><span class="text-warning">⚠ Reviewing Chart</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-frame reveal">
+      <div class="preview-topbar p-3 d-flex align-items-center justify-content-between rounded-top" style="background: linear-gradient(90deg, #0f766e, #14b8a6) !important; color: white;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-person-circle"></i>
+          <span class="fw-bold small">MediNotex · Secure Patient Health Portal</span>
+        </div>
+        <div class="badge bg-light text-teal fw-bold text-dark">✓ Identity Verified HIPAA Secure</div>
+      </div>
+      <div class="bg-white border border-top-0 rounded-bottom p-4">
+        <div class="row g-4">
+          
+          <div class="col-lg-4 border-end">
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <div class="bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4" style="width:3.5rem; height:3.5rem;">JD</div>
+              <div>
+                <h5 class="fw-bold mb-0 h6">John Doe</h5>
+                <span class="text-muted small" style="font-size:0.75rem;">Patient ID: #MNX-98241</span>
+              </div>
+            </div>
+            
+            <div class="card bg-light border-0 p-3 mb-3">
+              <h6 class="fw-bold text-uppercase small text-muted mb-2" style="font-size:0.7rem; letter-spacing:0.5px;">Central Health Summary</h6>
+              <ul class="list-unstyled mb-0 small text-dark" style="font-size:0.8rem;">
+                <li class="mb-1"><strong>Primary Condition:</strong> Hypertension (I10)</li>
+                <li class="mb-1"><strong>Blood Pressure Profile:</strong> 140/90 mmHg</li>
+                <li><strong>Allergies Recorded:</strong> None Documented</li>
+              </ul>
+            </div>
+
+            <div class="card border-warning bg-warning-subtle bg-opacity-10 p-3">
+              <h6 class="fw-bold text-warning small mb-1"><i class="bi bi-bell-fill me-1"></i> Notification Board</h6>
+              <p class="mb-0 text-dark small" style="font-size:0.75rem;">Your customized Cardiology summary from June 10, 2026, has been checked and cleared by coding validation specialists.</p>
+            </div>
+          </div>
+
+          <div class="col-lg-8">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <div class="border rounded p-3 h-100 bg-white">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold small mb-0"><i class="bi bi-calendar2-event text-primary me-1"></i> Appointments</h6>
+                    <span class="badge bg-success-subtle text-success small" style="font-size:0.65rem;">Confirmed</span>
+                  </div>
+                  <p class="mb-1 fw-bold text-dark small">Echocardiogram Follow-up</p>
+                  <p class="text-muted small mb-0" style="font-size:0.75rem;">June 24, 2026 · 10:30 AM<br />with Dr. David Hartley</p>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="border rounded p-3 h-100 bg-white">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold small mb-0"><i class="bi bi-file-earmark-pdf text-danger me-1"></i> Approved Reports</h6>
+                    <a href="#" class="text-decoration-none small fw-bold" style="font-size:0.65rem;">Download PDF</a>
+                  </div>
+                  <p class="mb-1 fw-bold text-dark small">Cardiology Clinical Summary</p>
+                  <p class="text-muted small mb-0" style="font-size:0.75rem;">Processed: June 10, 2026<br />Status: Released by Provider</p>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="border rounded p-3 bg-white">
+                  <h6 class="fw-bold small mb-3"><i class="bi bi-capsule text-info me-1"></i> Active Prescriptions History</h6>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 small" style="font-size:0.8rem;">
+                    <div>
+                      <strong>Atorvastatin 20mg Oral Tablet</strong>
+                      <div class="text-muted" style="font-size:0.75rem;">Take 1 tablet daily at bedtime — Refills Left: 3</div>
+                    </div>
+                    <span class="badge bg-light text-dark border">Active Pharmacy Ingestion</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="why-patients-love" class="py-5 bg-white">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <div class="section-eyebrow justify-content-center text-success text-uppercase fw-bold small mb-2">Patient Validation</div>
+      <h2 class="section-title fw-bold">Why Patients Love MediNotex</h2>
+      <p class="section-subtitle text-muted mx-auto" style="max-width: 600px;">
+        Designed to create structural clarity, transparency, and accessible coordination tools directly inside the healthcare interaction pipeline.
+      </p>
+    </div>
+
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-6">
+        <div class="p-4 bg-light rounded-4 shadow-sm border-start border-4 border-success">
+          <blockquote class="blockquote small text-muted mb-3 italic">
+            "I used to walk away from doctor visits confused about my treatment codes or awaiting notes for days. With this platform, my health history timelines and clinical updates deploy immediately inside my portal interface. The appointment coordination is simple."
+          </blockquote>
+          <div class="d-flex align-items-center gap-2">
+            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center small fw-bold" style="width:2rem; height:2rem;">MM</div>
+            <span class="fw-bold small text-dark">Marcus Miller — Verified Care Patient User</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-6">
+        <ul class="list-unstyled mb-0 row g-3">
+          <li class="col-sm-6">
+            <div class="d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              <div>
+                <strong class="d-block small text-dark fw-bold">Easy Access to Reports</strong>
+                <span class="text-muted small" style="font-size:0.75rem;">Download or trace validated encounter breakdowns instantly.</span>
+              </div>
+            </div>
+          </li>
+          <li class="col-sm-6">
+            <div class="d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              <div>
+                <strong class="d-block small text-dark fw-bold">Faster Care Communication</strong>
+                <span class="text-muted small" style="font-size:0.75rem;">Direct end-to-end encrypted messaging streams with clinical groups.</span>
+              </div>
+            </div>
+          </li>
+          <li class="col-sm-6">
+            <div class="d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              <div>
+                <strong class="d-block small text-dark fw-bold">Secure Medical Records</strong>
+                <span class="text-muted small" style="font-size:0.75rem;">Data is protected using dedicated enterprise AES-256 standard walls.</span>
+              </div>
+            </div>
+          </li>
+          <li class="col-sm-6">
+            <div class="d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              <div>
+                <strong class="d-block small text-dark fw-bold">Better Treatment Tracking</strong>
+                <span class="text-muted small" style="font-size:0.75rem;">Never lose visual tracking logs concerning structural diagnostics.</span>
+              </div>
+            </div>
+          </li>
+          <li class="col-sm-12">
+            <div class="d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              <div>
+                <strong class="d-block small text-dark fw-bold">Appointment Convenience</strong>
+                <span class="text-muted small" style="font-size:0.75rem;">Re-route schedule metrics instantly with fully digitized resource tracking pipelines.</span>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="testimonials" class="bg-light py-5">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <div class="section-eyebrow justify-content-center">Testimonials</div>
+      <h2 class="section-title">Trusted by Healthcare Professionals</h2>
+      <p class="section-subtitle">Hear from doctors, coders, and hospital administrators who use MediNotex every day.</p>
+    </div>
+
+    <div class="testi-slider reveal">
+      <div class="testi-track" id="testiTrack">
+        <div class="testi-slide">
+          <div class="testi-card p-4 border rounded bg-white shadow-sm">
+            <p class="testi-text font-italic text-muted small">"MediNotex transformed patient tracking metrics within the cardiology unit. Charts that took 30 minutes drop below 5 seamlessly."</p>
+            <div class="fw-bold small text-dark">Dr. David Hartley · Mayo Clinic</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cta" class="py-5 text-white text-center" style="background: linear-gradient(135deg, #1e3a8a, #0d9488);">
+  <div class="container position-relative" style="z-index:1">
+    <div class="reveal">
+      <div class="section-eyebrow justify-content-center text-white-50 small mb-2">Get Started Today</div>
+      <h2 class="cta-title fw-bold text-white">Ready to Transform Your Clinical Documentation?</h2>
+      <p class="cta-subtitle text-white-50 mx-auto my-3" style="max-width: 600px;">
+        Join thousands of active users reducing transcription overhead and enabling high-transparency access channels.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+        <button type="button" class="btn btn-light px-4 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#requestDemoModal">
+          Request a Demo
+        </button>
+        <button type="button" class="btn btn-outline-light px-4 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#patientRegisterModal">
+          Patient Registration
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal fade" id="requestDemoModal" tabindex="-1" aria-labelledby="requestDemoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+      
+      <div class="modal-header bg-primary text-white py-3 border-0">
+        <h5 class="modal-title fw-bold h6 d-flex align-items-center gap-2" id="requestDemoModalLabel">
+          <i class="bi bi-display fs-5"></i> Request an Enterprise Demo
+        </h5>
+        <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div id="demoFormState">
+        <form id="demoRequestForm" onsubmit="return handleDemoSubmission(event);">
+          <div class="modal-body p-4 bg-white">
+            
+            <div class="mb-3">
+              <label for="demoFullName" class="form-label small fw-semibold text-dark">Full Name</label>
+              <input type="text" class="form-control bg-light-subtle" id="demoFullName" placeholder="e.g. Dr. Jane Smith" />
+              <div class="invalid-feedback" id="errFullName">Please enter a valid name (at least 2 characters).</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="demoOrg" class="form-label small fw-semibold text-dark">Organization / Hospital Name</label>
+              <input type="text" class="form-control bg-light-subtle" id="demoOrg" placeholder="e.g. Johns Hopkins Medicine" />
+              <div class="invalid-feedback" id="errOrg">Please enter your organization's name.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="demoRole" class="form-label small fw-semibold text-dark">Your Professional Role</label>
+              <select class="form-select bg-light-subtle" id="demoRole">
+                <option value="" selected disabled>Select your workflow role...</option>
+                <option value="Doctor">Doctor</option>
+                <option value="Medical Coder">Medical Coder</option>
+                <option value="Hospital Administrator">Hospital Administrator</option>
+                <option value="Clinic Manager">Clinic Manager</option>
+              </select>
+              <div class="invalid-feedback" id="errRole">Please select your role.</div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="demoEmail" class="form-label small fw-semibold text-dark">Work Email</label>
+                <input type="email" class="form-control bg-light-subtle" id="demoEmail" placeholder="name@hospital.org" />
+                <div class="invalid-feedback" id="errEmail">Please enter a valid email.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="demoPhone" class="form-label small fw-semibold text-dark">Phone Number</label>
+                <input type="tel" class="form-control bg-light-subtle" id="demoPhone" placeholder="+1 (555) 000-0000" />
+                <div class="invalid-feedback" id="errPhone">Please enter a valid phone number.</div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="demoUsers" class="form-label small fw-semibold text-dark">Estimated System Users (Seats)</label>
+              <input type="number" class="form-control bg-light-subtle" id="demoUsers" min="1" placeholder="e.g. 25" />
+              <div class="invalid-feedback" id="errUsers">Please specify user seat counts greater than 0.</div>
+            </div>
+            
+            <div class="mb-0">
+              <label for="demoMessage" class="form-label small fw-semibold text-dark">EHR Integration Requirements</label>
+              <textarea class="form-control bg-light-subtle" id="demoMessage" rows="3" placeholder="Tell us about your environment..."></textarea>
+            </div>
+            
+          </div>
+          <div class="modal-footer bg-light px-4 py-3 border-0 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-link link-secondary text-decoration-none small fw-medium" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="demoSubmitBtn" class="btn btn-primary btn-sm px-4 fw-medium shadow-sm d-flex align-items-center gap-2">
+              <span id="demoSubmitSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              <span id="demoSubmitLabel">Submit Request</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div id="demoSuccessState" class="d-none text-center p-5 bg-white">
+        <div class="mb-3 text-success">
+          <i class="bi bi-check-circle-fill" style="font-size: 3rem;"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Request Received!</h4>
+        <p id="demoSuccessMsg" class="text-muted small px-3"></p>
+        <button type="button" class="btn btn-primary btn-sm px-4 mt-3 shadow-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer id="footer" class="bg-dark text-white-50 py-5">
+  <div class="container">
+    <div class="row g-5">
+
+      <div class="col-lg-4">
+        <div class="footer-brand text-white d-flex align-items-center gap-2 mb-3">
+          <div class="brand-icon bg-primary p-2 rounded text-white"><i class="bi bi-activity"></i></div>
+          <span class="footer-brand-name fw-bold h5 mb-0">MediNotex</span>
+        </div>
+        <p class="footer-desc small text-muted">
+          AI-powered clinical note summarization, automated medical coding validation, and streamlined patient tools for enterprise configurations.
+        </p>
+      </div>
+
+      <div class="col-6 col-lg-2">
+        <div class="footer-heading text-white small fw-bold mb-3">Patient Portal</div>
+        <ul class="footer-links list-unstyled small d-grid gap-2">
+          <li><a href="#patient-services" class="text-white-50 text-decoration-none">Appointments</a></li>
+          <li><a href="#preview" class="text-white-50 text-decoration-none">Reports Access</a></li>
+          <li><a href="#patient-services" class="text-white-50 text-decoration-none">Medical Charts</a></li>
+        </ul>
+      </div>
+
+      <div class="col-6 col-lg-2">
+        <div class="footer-heading text-white small fw-bold mb-3">Platform System</div>
+        <ul class="footer-links list-unstyled small d-grid gap-2">
+          <li><a href="#" class="text-white-50 text-decoration-none">AI Summarization</a></li>
+          <li><a href="#" class="text-white-50 text-decoration-none">ICD/CPT Coding</a></li>
+          <li><a href="#" class="text-white-50 text-decoration-none">Privacy Policy</a></li>
+          <li><a href="#" class="text-white-50 text-decoration-none">Terms of Service</a></li>
+        </ul>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="footer-heading text-white small fw-bold mb-3">Enterprise Contact</div>
+        <div class="footer-contact-item small mb-2"><i class="bi bi-envelope me-2"></i>hello@medinotex.ai</div>
+        <div class="footer-contact-item small mb-2"><i class="bi bi-shield-check me-2"></i>HIPAA Compliant · SOC 2 Architecture</div>
+      </div>
+
+    </div>
+
+    <hr class="border-secondary my-4" />
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small">
+      <p class="footer-copy mb-0">© 2026 <span>MediNotex, Inc.</span> All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<div class="modal fade" id="patientRegisterModal" tabindex="-1" aria-labelledby="patientRegisterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header text-white" style="background-color: #0f766e !important;">
+        <h5 class="modal-title fw-bold" id="patientRegisterModalLabel"><i class="bi bi-shield-plus me-2"></i>Create Your Secure Patient Account</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form onsubmit="return  handlePatientRegister(event);">
+        <div class="modal-body p-4">
+          <div class="alert alert-info py-2" style="font-size:0.8rem;">
+            <i class="bi bi-info-circle-fill me-1"></i> <strong>Note:</strong> Self-registration applies solely to <strong>Patients</strong>. Physician and billing validation encoder accounts must be manually provisioned by verification system administrators.
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="regFirst" class="form-label small fw-bold">First Name</label>
+              <input type="text" class="form-control" id="regFirst" required />
+            </div>
+            <div class="col-md-6">
+              <label for="regLast" class="form-label small fw-bold">Last Name</label>
+              <input type="text" class="form-control" id="regLast" required />
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="regEmail" class="form-label small fw-bold">Email Address</label>
+              <input type="email" class="form-control" id="regEmail" placeholder="yourname@domain.com" required />
+            </div>
+            <div class="col-md-6">
+              <label for="regPhone" class="form-label small fw-bold">Phone Number</label>
+              <input type="tel" class="form-control" id="regPhone" placeholder="+1 (555) 000-0000" required />
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="regPass" class="form-label small fw-bold">Password</label>
+              <input type="password" class="form-control" id="regPass" required />
+            </div>
+            <div class="col-md-6">
+              <label for="regConfirm" class="form-label small fw-bold">Confirm Password</label>
+              <input type="password" class="form-control" id="regConfirm" required />
+            </div>
+          </div>
+          <div class="row g-3 mb-0">
+            <div class="col-md-6">
+              <label for="regDOB" class="form-label small fw-bold">Date of Birth</label>
+              <input type="date" class="form-control" id="regDOB" required />
+            </div>
+            <div class="col-md-6">
+              <label for="regGender" class="form-label small fw-bold">Gender</label>
+              <select class="form-select" id="regGender" required>
+                <option value="" selected disabled>Select...</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="PreferNotToSay">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary small" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success small px-4" style="background-color:#0f766e !important; border-color:#0f766e !important;">Register Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script 
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
+  crossorigin="anonymous"
+></script> 
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

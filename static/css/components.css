@@ -1,0 +1,187 @@
+/* ============================================================
+   MediNoteX — components.css
+   ONE canonical definition for every reusable UI piece.
+   Replaces 5 duplicated sidebars, 4 duplicated toast systems,
+   and per-page badge/card/table variants. Load AFTER base.css.
+   ============================================================ */
+
+/* ===================== SIDEBAR ===================== */
+.mnx-sidebar {
+  position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-w);
+  background: linear-gradient(180deg, #0c1a5e 0%, #1E40AF 55%, #0e7490 100%);
+  display: flex; flex-direction: column; z-index: 50;
+  transition: transform .3s cubic-bezier(.4,0,.2,1), width .3s ease;
+  box-shadow: 4px 0 24px rgba(30,64,175,.2);
+}
+.mnx-sidebar.collapsed { width: 76px; }
+.mnx-sidebar.collapsed .mnx-nav-label,
+.mnx-sidebar.collapsed .mnx-logo-text,
+.mnx-sidebar.collapsed .mnx-nav-badge,
+.mnx-sidebar.collapsed .mnx-nav-section-title { display: none; }
+.mnx-sidebar.collapsed .mnx-nav-item { justify-content: center; }
+
+.mnx-logo { padding: 18px 18px 14px; border-bottom: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; gap: 10px; }
+.mnx-logo-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.mnx-logo-text { color: #fff; }
+.mnx-logo-name { font-weight: 800; font-size: 15px; line-height: 1.2; }
+.mnx-logo-sub  { color: rgba(147,197,253,.55); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; }
+
+.mnx-nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
+.mnx-nav-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.28); padding: 12px 13px 5px; }
+.mnx-nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 13px; border-radius: 11px;
+  font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.65); cursor: pointer;
+  transition: all .2s; margin-bottom: 2px; text-decoration: none;
+}
+.mnx-nav-item:hover { background: rgba(255,255,255,.1); color: #fff; }
+.mnx-nav-item.active { background: rgba(255,255,255,.18); color: #fff; font-weight: 700; }
+.mnx-nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+.mnx-nav-badge { margin-left: auto; background: var(--warning); color: #000; font-size: 10px; font-weight: 700; border-radius: 99px; padding: 1px 7px; }
+.mnx-nav-badge.red { background: var(--danger); color: #fff; }
+
+.mnx-sidebar-foot { padding: 12px 10px; border-top: 1px solid rgba(255,255,255,.1); }
+.mnx-user-chip { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 11px; background: rgba(255,255,255,.08); cursor: pointer; }
+.mnx-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; background: linear-gradient(135deg,#f59e0b,#d97706); }
+
+.mnx-sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; display: none; backdrop-filter: blur(2px); }
+.mnx-sidebar-overlay.show { display: block; }
+
+@media (max-width: 1023px) {
+  .mnx-sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+  .mnx-sidebar.mobile-open { transform: translateX(0); }
+}
+
+/* ===================== TOPBAR ===================== */
+.mnx-topbar {
+  position: fixed; top: 0; right: 0; left: var(--sidebar-w); height: var(--topbar-h);
+  background: var(--card); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 12px; z-index: 30;
+  transition: left .3s, background .3s;
+}
+.mnx-topbar.full { left: 0; }
+@media (max-width: 1023px) { .mnx-topbar, .mnx-topbar.full { left: 0; } }
+
+.mnx-main { margin-left: var(--sidebar-w); padding-top: var(--topbar-h); min-height: 100vh; transition: margin-left .3s; }
+.mnx-main.full { margin-left: 0; }
+@media (max-width: 1023px) { .mnx-main, .mnx-main.full { margin-left: 0; } }
+
+.mnx-icon-btn {
+  width: 37px; height: 37px; border-radius: 10px; border: 1.5px solid var(--border);
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--t2); transition: all .2s; flex-shrink: 0; position: relative;
+}
+.mnx-icon-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+.mnx-icon-btn svg { width: 17px; height: 17px; }
+.mnx-notif-dot { position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 99px; background: var(--danger); color: #fff; font-size: 9.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card); }
+
+/* ===================== BUTTONS ===================== */
+.btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: none; transition: all .2s; white-space: nowrap; }
+.btn:disabled { opacity: .55; cursor: not-allowed; pointer-events: none; }
+.btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; box-shadow: 0 4px 14px rgba(30,64,175,.28); }
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(30,64,175,.38); }
+.btn-outline { background: transparent; color: var(--t2); border: 1.5px solid var(--border); }
+.btn-outline:hover:not(:disabled) { border-color: var(--primary-light); color: var(--primary); }
+.btn-ghost { background: transparent; color: var(--t2); border: none; padding: 7px 10px; }
+.btn-ghost:hover:not(:disabled) { background: var(--bg); color: var(--t1); }
+.btn-danger { background: linear-gradient(135deg,#DC2626,#EF4444); color: #fff; }
+.btn-danger:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-success { background: linear-gradient(135deg,#059669,#10B981); color: #fff; }
+.btn-success:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-sm { padding: 7px 14px; font-size: 12.5px; border-radius: 8px; }
+.btn-xs { padding: 4px 10px; font-size: 11.5px; border-radius: 7px; }
+.btn .mnx-spinner { width: 14px; height: 14px; border-width: 2px; }
+
+/* ===================== CARDS ===================== */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.card-hd { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.card-bd { padding: 18px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; transition: transform .2s, box-shadow .2s; }
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+/* ===================== TABLE ===================== */
+.tbl-wrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--t3); padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl td { padding: 10px 14px; font-size: 13.5px; border-bottom: 1px solid var(--border); color: var(--t1); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(59,130,246,.025); }
+
+/* ===================== BADGES (one canonical status vocabulary) ===================== */
+.bdg { display: inline-flex; align-items: center; gap: 5px; border-radius: 99px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.bdg-approved   { background: var(--badge-approved-bg);   color: var(--badge-approved-fg); }
+.bdg-pending    { background: var(--badge-pending-bg);    color: var(--badge-pending-fg); }
+.bdg-rejected   { background: var(--badge-rejected-bg);   color: var(--badge-rejected-fg); }
+.bdg-draft      { background: var(--badge-draft-bg);      color: var(--badge-draft-fg); }
+.bdg-processing { background: var(--badge-processing-bg); color: var(--badge-processing-fg); }
+.bdg-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* ===================== MODALS ===================== */
+.mnx-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000;
+  display: none; align-items: center; justify-content: center; padding: 16px;
+  backdrop-filter: blur(4px);
+}
+.mnx-modal-overlay.show { display: flex; }
+.mnx-modal {
+  background: var(--card); border-radius: 20px; width: 100%; max-width: 560px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 32px 80px rgba(0,0,0,.22);
+  animation: modalIn .25s ease both;
+}
+.mnx-modal-hd { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.mnx-modal-title { font-size: 16px; font-weight: 800; color: var(--t1); }
+.mnx-modal-close { cursor: pointer; background: var(--bg); border: none; width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--t2); }
+.mnx-modal-close:hover { background: rgba(239,68,68,.1); color: var(--danger); }
+.mnx-modal-bd { padding: 20px 24px; }
+.mnx-modal-ft { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+
+.mnx-form-label { font-size: 12px; font-weight: 600; color: var(--t2); margin-bottom: 5px; display: block; }
+.mnx-input { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 13px; font-size: 13.5px; color: var(--t1); outline: none; transition: all .2s; font-family: inherit; }
+.mnx-input:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+
+/* ===================== TOASTS ===================== */
+.mnx-toast-stack { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column-reverse; gap: 8px; pointer-events: none; }
+.mnx-toast { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 14px; padding: 12px 16px; box-shadow: var(--shadow-lg); min-width: 280px; max-width: 360px; pointer-events: all; border-left: 4px solid var(--success); animation: toastIn .3s ease both; }
+.mnx-toast.removing { animation: toastOut .25s ease forwards; }
+.mnx-toast-icon { font-size: 18px; flex-shrink: 0; }
+.mnx-toast-title { font-size: 13px; font-weight: 700; color: var(--t1); }
+.mnx-toast-body { font-size: 12px; color: var(--t2); }
+.mnx-toast-close { margin-left: auto; background: none; border: none; color: var(--t3); cursor: pointer; font-size: 16px; line-height: 1; }
+
+/* ===================== SPINNER ===================== */
+.mnx-spinner { width: 18px; height: 18px; border: 2.5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .65s linear infinite; display: inline-block; }
+.mnx-spinner.light { border-color: rgba(255,255,255,.3); border-top-color: #fff; }
+
+/* ===================== SKELETON LOADERS ===================== */
+.mnx-skeleton { background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 8px; }
+.mnx-skel-line { height: 12px; margin-bottom: 8px; }
+.mnx-skel-row { height: 44px; margin-bottom: 6px; border-radius: 10px; }
+.mnx-skel-card { height: 110px; border-radius: var(--radius-lg); }
+
+/* ===================== EMPTY STATES ===================== */
+.mnx-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 20px; color: var(--t3); }
+.mnx-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: var(--t3); }
+.mnx-empty-title { font-size: 14px; font-weight: 700; color: var(--t1); margin-bottom: 4px; }
+.mnx-empty-desc { font-size: 12.5px; color: var(--t3); max-width: 320px; }
+
+/* ===================== WORKFLOW STEPPER ===================== */
+.mnx-stepper { display: flex; align-items: flex-start; gap: 0; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px; }
+.mnx-step { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 110px; position: relative; }
+.mnx-step:not(:last-child)::after {
+  content: ''; position: absolute; top: 17px; left: calc(50% + 22px); right: calc(-50% + 22px);
+  height: 2px; background: var(--border); z-index: 0;
+}
+.mnx-step.done:not(:last-child)::after { background: var(--success); }
+.mnx-step-dot {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; background: var(--card); border: 2px solid var(--border); color: var(--t3);
+  z-index: 1; transition: all .25s;
+}
+.mnx-step.done .mnx-step-dot { background: var(--success); border-color: var(--success); color: #fff; }
+.mnx-step.active .mnx-step-dot { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 0 0 4px rgba(30,64,175,.15); }
+.mnx-step-label { font-size: 11px; font-weight: 600; color: var(--t3); text-align: center; }
+.mnx-step.active .mnx-step-label, .mnx-step.done .mnx-step-label { color: var(--t1); }
+
+@media (max-width: 640px) {
+  .mnx-stepper { justify-content: flex-start; }
+  .mnx-step { min-width: 88px; }
+}

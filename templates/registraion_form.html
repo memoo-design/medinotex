@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediNoteX — Register Enterprise Workspace</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="{{url_for('static',filename='styles/index.css')}}" />
+</head>
+<body>
+
+<div class="container-fluid min-vh-100 d-flex p-0 fade-in">
+    <div class="row g-0 w-100">
+
+        <div class="col-lg-5 d-none d-lg-flex flex-column justify-content-between p-5 left-panel text-white">
+
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <div class="logo-icon d-flex align-items-center justify-content-center">
+                    <i class="bi bi-activity fs-5 text-primary"></i>
+                </div>
+                <span class="logo-text fw-bold fs-4">MediNote<span class="text-primary">X</span></span>
+            </div>
+
+            <div class="flex-grow-1 d-flex flex-column justify-content-center">
+                <p class="text-uppercase fw-semibold mb-2" style="font-size:0.7rem; letter-spacing:0.12rem; color:#38bdf8;">Enterprise Clinical Platform</p>
+                <h1 class="fw-bold mb-3" style="font-size:2rem; line-height:1.25; letter-spacing:-0.5px;">
+                    Intelligent documentation<br />for clinical teams.
+                </h1>
+                <p class="mb-5" style="font-size:0.9rem; color:rgba(255,255,255,0.55); max-width:340px; line-height:1.7;">
+                    Automate patient notes, streamline rounds, and maintain HIPAA-grade compliance — all from a single workspace built for modern healthcare.
+                </p>
+
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="feature-icon-wrapper rounded-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px;flex-shrink:0;">
+                            <i class="bi bi-shield-check" style="font-size:1rem;"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-semibold" style="font-size:0.85rem;">HIPAA-Grade Security</p>
+                            <p class="mb-0" style="font-size:0.75rem; color:rgba(255,255,255,0.45);">AES-256 encryption at rest and in transit</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="feature-icon-wrapper rounded-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px;flex-shrink:0;">
+                            <i class="bi bi-cpu" style="font-size:1rem;"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-semibold" style="font-size:0.85rem;">AI-Assisted Notes</p>
+                            <p class="mb-0" style="font-size:0.75rem; color:rgba(255,255,255,0.45);">Ambient dictation with real-time structuring</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="feature-icon-wrapper rounded-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px;flex-shrink:0;">
+                            <i class="bi bi-people" style="font-size:1rem;"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-semibold" style="font-size:0.85rem;">Multi-Department Access</p>
+                            <p class="mb-0" style="font-size:0.75rem; color:rgba(255,255,255,0.45);">Role-based permissions across your organisation</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="illustration-container mt-5 position-relative d-none d-xl-block">
+                    <div class="floating-card bg-glass rounded-3 p-3 shadow-lg">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="rounded-circle bg-success" style="width:8px;height:8px;"></div>
+                            <span style="font-size:0.75rem; color:#334155; font-weight:600;">Live Session · ICU Ward 3</span>
+                        </div>
+                        <p style="font-size:0.72rem; color:#64748b; margin:0; line-height:1.5;">
+                            AI note draft ready · 3 patients updated · 0 pending reviews
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <p class="mt-4 mb-0" style="font-size:0.72rem; color:rgba(255,255,255,0.3);">
+                © 2025 MediNoteX Inc. · HIPAA Compliant · SOC 2 Type II
+            </p>
+        </div>
+
+        <div class="col-lg-7 d-flex align-items-center justify-content-center bg-light-gray px-3 py-5">
+            <div class="w-100" style="max-width:540px;">
+
+                <div class="d-flex align-items-center gap-2 mb-4 d-lg-none">
+                    <div class="logo-icon d-flex align-items-center justify-content-center">
+                        <i class="bi bi-activity fs-5 text-primary"></i>
+                    </div>
+                    <span class="logo-text fw-bold fs-4">MediNote<span class="text-primary">X</span></span>
+                </div>
+
+                <div class="registration-card p-4 p-md-5 shadow-sm">
+
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-1" style="font-size:1.45rem; letter-spacing:-0.3px;">Create your workspace</h2>
+                        <p class="text-muted mb-0" style="font-size:0.875rem;">
+                            Already registered? <a href="#" class="text-primary text-decoration-none fw-medium">Sign in here</a>
+                        </p>
+                    </div>
+
+                    <form id="registrationForm" action="{{ url_for('register') }}" method="POST" novalidate>
+
+                        <p class="section-divider fw-semibold text-uppercase mb-3">Personal Details</p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <label for="firstName" class="form-label fw-medium" style="font-size:0.83rem;">First Name</label>
+                                <input type="text" id="firstName" name="first_name" class="form-control" placeholder="Jane" required />
+                                <div id="firstNameError" class="invalid-feedback">First name is required.</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="lastName" class="form-label fw-medium" style="font-size:0.83rem;">Last Name</label>
+                                <input type="text" id="lastName" name="last_name" class="form-control" placeholder="Doe" required />
+                                <div id="lastNameError" class="invalid-feedback">Last name is required.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-medium" style="font-size:0.83rem;">Work Email</label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="jane.doe@hospital.com" required />
+                            <div id="emailError" class="invalid-feedback">Please enter a valid email address (e.g., name@hospital.com).</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label fw-medium" style="font-size:0.83rem;">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 000-0000" required />
+                            <div id="phoneError" class="invalid-feedback">Enter a valid phone number (10–15 digits).</div>
+                        </div>
+
+                        <p class="section-divider fw-semibold text-uppercase mb-3 mt-4">Account Role</p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-12">
+                                <label for="role" class="form-label fw-medium" style="font-size:0.83rem;">Clinical / Platform Role</label>
+                                <select id="role" name="role" class="form-select" required>
+                                    <option value="" disabled selected>Select your role</option>
+                                    <option value="Doctor">Doctor</option>
+                                    <option value="Medical Coder">Medical Coder</option>
+                                    <option value="Patient">Patient</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                                <div id="roleError" class="invalid-feedback">Please select your role.</div>
+                            </div>
+                        </div>
+
+                        <div id="organizationSection" class="mb-3 d-none">
+                            <label for="organization" class="form-label fw-medium" style="font-size:0.83rem;">Organisation Name</label>
+                            <input type="text" id="organization" name="organization" class="form-control" placeholder="City General Hospital" />
+                            <div id="organizationError" class="invalid-feedback">Organisation name is required.</div>
+                        </div>
+
+                        <div id="doctorFields" class="d-none">
+                            <div class="mb-3">
+                                <label for="specialty" class="form-label fw-medium" style="font-size:0.83rem;">Specialty</label>
+                                <input type="text" id="specialty" name="specialty" class="form-control" placeholder="e.g. Cardiology" />
+                                <div id="specialtyError" class="invalid-feedback">Specialty is required.</div>
+                            </div>
+                        </div>
+
+                        <div id="medicalCoderFields" class="d-none">
+                            <div class="mb-3">
+                                <label for="certification" class="form-label fw-medium" style="font-size:0.83rem;">Certification ID</label>
+                                <input type="text" id="certification" name="certification" class="form-control" placeholder="e.g. CPC-12345" />
+                                <div id="certificationError" class="invalid-feedback">Certification ID is required.</div>
+                            </div>
+                        </div>
+
+                        <div id="patientFields" class="d-none p-3 mb-3 rounded-3 border bg-white shadow-xs">
+                            <p class="fw-semibold text-primary text-uppercase mb-3" style="font-size:0.8rem; letter-spacing:0.05rem;">Patient Medical Information</p>
+                            
+                            <div class="mb-3">
+                                <label for="date_of_birth" class="form-label fw-medium" style="font-size:0.83rem;">Date of Birth</label>
+                                <input type="date" id="date_of_birth" name="date_of_birth" class="form-control" />
+                                <div id="dobError" class="invalid-feedback">Date of birth is required.</div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-6">
+                                    <label for="gender" class="form-label fw-medium" style="font-size:0.83rem;">Gender</label>
+                                    <select id="gender" name="gender" class="form-select">
+                                        <option value="" disabled selected>Select gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <div id="genderError" class="invalid-feedback">Gender specification is required.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label for="blood_group" class="form-label fw-medium" style="font-size:0.83rem;">Blood Group</label>
+                                    <select id="blood_group" name="blood_group" class="form-select">
+                                        <option value="" disabled selected>Select type</option>
+                                        <option value="A+">A+</option>
+                                        <option value="A-">A-</option>
+                                        <option value="B+">B+</option>
+                                        <option value="B-">B-</option>
+                                        <option value="AB+">AB+</option>
+                                        <option value="AB-">AB-</option>
+                                        <option value="O+">O+</option>
+                                        <option value="O-">O-</option>
+                                    </select>
+                                    <div id="bloodGroupError" class="invalid-feedback">Blood group selection is required.</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="emergency_contact_name" class="form-label fw-medium" style="font-size:0.83rem;">Emergency Contact Name</label>
+                                <input type="text" id="emergency_contact_name" name="emergency_contact_name" class="form-control" placeholder="John Doe" />
+                                <div id="emergencyNameError" class="invalid-feedback">Emergency contact name is required.</div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label for="emergency_contact_phone" class="form-label fw-medium" style="font-size:0.83rem;">Emergency Contact Phone</label>
+                                <input type="tel" id="emergency_contact_phone" name="emergency_contact_phone" class="form-control" placeholder="+1 (555) 000-0000" />
+                                <div id="emergencyPhoneError" class="invalid-feedback">Emergency contact phone is required.</div>
+                            </div>
+                        </div>
+
+                        <p class="section-divider fw-semibold text-uppercase mb-3 mt-4">Security Setup</p>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label fw-medium" style="font-size:0.83rem;">Password</label>
+                            <div class="input-group">
+                                <input type="password" id="password" name="password" class="form-control border-end-0" placeholder="Create a strong password" required />
+                                <button type="button" class="toggle-password btn btn-outline-secondary bg-white border-start-0" data-target="password" tabindex="-1" style="border-color:#cbd5e1;">
+                                    <i class="bi bi-eye" style="font-size:0.9rem;"></i>
+                                </button>
+                            </div>
+                            <div class="strength-meter-container mt-2">
+                                <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width:0%; height:100%; transition: width 0.3s ease;"></div>
+                            </div>
+                            <span id="strengthText" class="text-muted extra-small d-block mt-1">Requirements: 8+ chars, Uppercase, Lowercase, Number, Symbol.</span>
+                            <div id="passwordError" class="invalid-feedback d-block" style="display:none!important;"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="confirmPassword" class="form-label fw-medium" style="font-size:0.83rem;">Confirm Password</label>
+                            <div class="input-group">
+                                <input type="password" id="confirmPassword" name="confirm_password" class="form-control border-end-0" placeholder="Repeat your password" required />
+                                <button type="button" class="toggle-password btn btn-outline-secondary bg-white border-start-0" data-target="confirmPassword" tabindex="-1" style="border-color:#cbd5e1;">
+                                    <i class="bi bi-eye" style="font-size:0.9rem;"></i>
+                                </button>
+                            </div>
+                            <div id="confirmPasswordError" class="invalid-feedback">Passwords do not match.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required />
+                                <label class="form-check-label" for="termsCheck" style="font-size:0.83rem;">
+                                    I agree to the <a href="#" class="text-primary text-decoration-none fw-medium">Terms of Service</a> and <a href="#" class="text-primary text-decoration-none fw-medium">Privacy Policy</a>
+                                </label>
+                                <div class="invalid-feedback">You must accept the terms to continue.</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="btn btn-primary btn-premium-gradient w-100 py-2 fw-semibold text-white">
+                            <span class="spinner-border spinner-border-sm me-2 d-none" id="btnSpinner" role="status" aria-hidden="true"></span>
+                            <span class="btn-text">Register Enterprise Workspace</span>
+                        </button>
+
+                    </form>
+                </div>
+
+                <p class="text-center mt-3 text-muted" style="font-size:0.76rem;">
+                    Protected by enterprise-grade encryption · <a href="#" class="text-muted">Privacy Policy</a>
+                </p>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const roleSelect = document.getElementById('role');
+    const orgSection = document.getElementById('organizationSection');
+    const orgInput = document.getElementById('organization');
+    
+    const doctorFields = document.getElementById('doctorFields');
+    const specialtyInput = document.getElementById('specialty');
+    
+    const medicalCoderFields = document.getElementById('medicalCoderFields');
+    const certificationInput = document.getElementById('certification');
+    
+    const patientFields = document.getElementById('patientFields');
+    const dobInput = document.getElementById('date_of_birth');
+    const genderInput = document.getElementById('gender');
+    const bloodGroupInput = document.getElementById('blood_group');
+    const emergencyNameInput = document.getElementById('emergency_contact_name');
+    const emergencyPhoneInput = document.getElementById('emergency_contact_phone');
+
+    const form = document.getElementById('registrationForm');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('strengthText');
+
+    // 1. Dynamic Role Visibility & Validation Toggling
+    roleSelect.addEventListener('change', function () {
+        const val = this.value;
+
+        // Reset visibility classes
+        orgSection.classList.add('d-none');
+        doctorFields.classList.add('d-none');
+        medicalCoderFields.classList.add('d-none');
+        patientFields.classList.add('d-none');
+
+        // Reset all dynamic attributes to non-required state
+        orgInput.required = false;
+        specialtyInput.required = false;
+        certificationInput.required = false;
+        dobInput.required = false;
+        genderInput.required = false;
+        bloodGroupInput.required = false;
+        emergencyNameInput.required = false;
+        emergencyPhoneInput.required = false;
+
+        // Apply rules based on role selection
+        if (val === 'Doctor') {
+            orgSection.classList.remove('d-none');
+            orgInput.required = true;
+            doctorFields.classList.remove('d-none');
+            specialtyInput.required = true;
+        } else if (val === 'Medical Coder') {
+            orgSection.classList.remove('d-none');
+            orgInput.required = true;
+            medicalCoderFields.classList.remove('d-none');
+            certificationInput.required = true;
+        } else if (val === 'Admin') {
+            orgSection.classList.remove('d-none');
+            orgInput.required = true;
+        } else if (val === 'Patient') {
+            patientFields.classList.remove('d-none');
+            dobInput.required = true;
+            genderInput.required = true;
+            bloodGroupInput.required = true;
+            emergencyNameInput.required = true;
+            emergencyPhoneInput.required = true;
+        }
+    });
+
+    // 2. Inline Password Strength Evaluation
+    passwordInput.addEventListener('input', function () {
+        const val = this.value;
+        let score = 0;
+
+        if (val.length >= 8) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[a-z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+
+        // Update colors based on complexity score
+        strengthBar.className = "progress-bar"; 
+        if (val.length === 0) {
+            strengthBar.style.width = '0%';
+        } else if (score <= 2) {
+            strengthBar.style.width = '33%';
+            strengthBar.classList.add('bg-danger');
+        } else if (score <= 4) {
+            strengthBar.style.width = '66%';
+            strengthBar.classList.add('bg-warning');
+        } else {
+            strengthBar.style.width = '100%';
+            strengthBar.classList.add('bg-success');
+        }
+    });
+
+    // 3. Interactive Password Toggle Icons
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const targetId = this.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (targetInput.type === 'password') {
+                targetInput.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                targetInput.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+    });
+
+    // 4. Form Submission and Validation Lifecycle
+    form.addEventListener('submit', function (event) {
+        let isValid = true;
+
+        // Custom verification matching routine
+        if (passwordInput.value !== confirmPasswordInput.value) {
+            confirmPasswordInput.setCustomValidity("Mismatch");
+            confirmPasswordInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            confirmPasswordInput.setCustomValidity("");
+            confirmPasswordInput.classList.remove('is-invalid');
+        }
+
+        // Native evaluation logic
+        if (!form.checkValidity() || !isValid) {
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            // Simulated submission animation
+            document.getElementById('btnSpinner').classList.remove('d-none');
+            document.getElementById('submitBtn').disabled = true;
+        }
+
+        form.classList.add('was-validated');
+    }, false);
+});
+</script>
+</body>
+</html>
