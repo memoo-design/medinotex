@@ -36,6 +36,8 @@ def create_app(config_class=Config):
     from routes.dashboard import dashboard_bp
     from routes.profile import profile_bp
     from routes.core import core_bp   # 👈 added (for / route)
+    from routes.history import history_bp
+    from routes.audit import audit_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(patients_bp, url_prefix="/api/patients")
@@ -45,6 +47,8 @@ def create_app(config_class=Config):
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
     app.register_blueprint(profile_bp, url_prefix="/api/profile")
+    app.register_blueprint(history_bp, url_prefix="/api/history")
+    app.register_blueprint(audit_bp, url_prefix="/api/audit")
     app.register_blueprint(core_bp)   # 👈 no prefix, handles "/"
 
     return app
@@ -62,6 +66,7 @@ if __name__ == "__main__":
     app = create_app()
 
     with app.app_context():
-        db.create_all()
+        from utils.schema import ensure_schema
+        ensure_schema()
 
     app.run(debug=True, host="0.0.0.0", port=5000)

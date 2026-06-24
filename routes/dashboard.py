@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from extensions import db
 from models.patient import Patient
-from models.clinical import ClinicalNote, AISummary, Appointment, Notification
+from models.clinical import ClinicalNote, AISummary, Appointment, Notification, WORKFLOW_RETURNED_FOR_CORRECTION
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -60,6 +60,20 @@ def stats():
     # Unread notifications count
     unread_notifs = Notification.query.filter_by(doctor_id=doctor_id, is_read=False).count()
 
+    revisions_needed = (
+        AISummary.query
+        .filter_by(doctor_id=doctor_id, workflow_status=WORKFLOW_RETURNED_FOR_CORRECTION)
+        .count()
+    )
+
+    recent_cases = (
+        AISummary.query
+        .filter_by(doctor_id=doctor_id)
+        .order_by(AISummary.updated_at.desc())
+        .limit(5)
+        .all()
+    )
+
     return jsonify({
         "total_patients":  total_patients,
         "ai_summaries":    ai_summaries,
@@ -67,5 +81,7 @@ def stats():
         "appts_today":     appts_today,
         "notes_this_week": notes_this_week,
         "unread_notifs":   unread_notifs,
+        "revisions_needed": revisions_needed,
         "recent_patients": [p.to_dict() for p in recent_patients],
+        "recent_cases":    [c.to_dict() for c in recent_cases],
     }), 200

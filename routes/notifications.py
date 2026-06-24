@@ -25,7 +25,7 @@ def list_notifications():
         .all()
     )
     unread = sum(1 for n in notifs if not n.is_read)
-    return jsonify({"notifications": [n.to_dict() for n in notifs], "unread": unread}), 200
+    return jsonify({"notifications": [n.to_dict() for n in notifs], "unread_count": unread}), 200
 
 
 @notifications_bp.post("/<int:notif_id>/read")

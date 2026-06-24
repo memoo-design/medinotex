@@ -7,7 +7,8 @@ from app import create_app
 from extensions import db, bcrypt
 from models.user import User
 from models.patient import Patient
-from models.clinical import Appointment, Notification
+from models.clinical import Appointment, Notification, ClinicalNote, AISummary, CaseHistory
+from models.clinical import WORKFLOW_DOCTOR_REVIEW, WORKFLOW_SUBMITTED_TO_CODER, WORKFLOW_RETURNED_FOR_CORRECTION
 from datetime import datetime, timedelta, timezone
 
 app = create_app()
@@ -28,7 +29,8 @@ SAMPLE_PATIENTS = [
 
 def seed():
     with app.app_context():
-        db.create_all()
+        from utils.schema import ensure_schema
+        ensure_schema()
 
         # Create doctor if doesn't exist
         doctor = User.query.filter_by(email="sarah.chen@medinotex.io").first()
@@ -41,10 +43,10 @@ def seed():
                 avatar_seed   = "doctor",
             )
             db.session.add(doctor)
-            db.session.flush()   # Get doctor.id before committing
-            print(f"✅ Doctor created: {doctor.email}  (password: MediNotex@2026)")
+            db.session.flush()
+            print(f"Doctor created: {doctor.email}  (password: MediNotex@2026)")
         else:
-            print(f"ℹ️  Doctor already exists: {doctor.email}")
+            print(f"Doctor already exists: {doctor.email}")
 
         # Seed patients
         now = datetime.now(timezone.utc)
@@ -62,7 +64,7 @@ def seed():
 
         db.session.flush()
 
-        # Seed appointments
+        # Seed appointments — plain string status (no enum)
         patients = Patient.query.filter_by(doctor_id=doctor.id).all()
         if patients and Appointment.query.filter_by(doctor_id=doctor.id).count() == 0:
             for i, pat in enumerate(patients[:4]):
@@ -87,11 +89,98 @@ def seed():
             db.session.add_all(notifs)
 
         db.session.commit()
-        print("✅ Database seeded successfully!")
+
+        # Sample clinical notes + summaries for demo workflow
+        _seed_demo_cases(doctor)
+
+        db.session.commit()
+        print("Database seeded successfully!")
         print("\n── Login credentials ──────────────────────────────────")
         print("   Email:    sarah.chen@medinotex.io")
         print("   Password: MediNotex@2026")
         print("───────────────────────────────────────────────────────\n")
+
+
+def _seed_demo_cases(doctor):
+    """Create sample notes/summaries so the dashboard is not empty."""
+    patients = Patient.query.filter_by(doctor_id=doctor.id).limit(3).all()
+    if not patients or AISummary.query.filter_by(doctor_id=doctor.id).count() > 0:
+        return
+
+    samples = [
+        {
+            "visit": "Follow-Up",
+            "text": "Patient reports stable blood pressure on current regimen. No chest pain. BP 128/82. Continue lisinopril 10mg daily.",
+            "soap": {
+                "subjective": "Patient reports stable symptoms, no new complaints.",
+                "objective": "BP 128/82. Heart regular rate and rhythm.",
+                "assessment": "Hypertension, well controlled.",
+                "plan": "Continue lisinopril. Recheck in 3 months.",
+            },
+            "workflow": WORKFLOW_DOCTOR_REVIEW,
+            "confidence": 91,
+        },
+        {
+            "visit": "Initial Consultation",
+            "text": "New patient with exertional chest discomfort. ECG shows nonspecific ST changes. Recommend stress test.",
+            "soap": {
+                "subjective": "Exertional chest pressure, 6/10, radiating to left shoulder.",
+                "objective": "ECG: nonspecific ST-T changes. Vitals stable.",
+                "assessment": "Suspected angina. Cardiac risk factors present.",
+                "plan": "Order stress test. Start aspirin 81mg daily.",
+            },
+            "workflow": WORKFLOW_SUBMITTED_TO_CODER,
+            "confidence": 88,
+        },
+        {
+            "visit": "Follow-Up",
+            "text": "Returned from coder — please clarify primary diagnosis coding for COPD exacerbation vs chronic bronchitis.",
+            "soap": {
+                "subjective": "Increased dyspnea and productive cough for 5 days.",
+                "objective": "SpO2 92% on room air. Wheezes bilaterally.",
+                "assessment": "Acute COPD exacerbation.",
+                "plan": "Prednisone taper, albuterol nebs, follow up in 1 week.",
+            },
+            "workflow": WORKFLOW_RETURNED_FOR_CORRECTION,
+            "confidence": 85,
+            "return_reason": "Please clarify primary diagnosis: COPD exacerbation vs chronic bronchitis.",
+        },
+    ]
+
+    for pat, sample in zip(patients, samples):
+        note = ClinicalNote(
+            patient_id    = pat.id,
+            doctor_id     = doctor.id,
+            visit_type    = sample["visit"],
+            source_type   = "text",
+            raw_text      = sample["text"],
+            processed     = True,
+        )
+        db.session.add(note)
+        db.session.flush()
+
+        summary = AISummary(
+            note_id         = note.id,
+            patient_id      = pat.id,
+            doctor_id       = doctor.id,
+            subjective      = sample["soap"]["subjective"],
+            objective       = sample["soap"]["objective"],
+            assessment      = sample["soap"]["assessment"],
+            plan            = sample["soap"]["plan"],
+            workflow_status = sample["workflow"],
+            ai_confidence   = sample["confidence"],
+            coder_return_reason = sample.get("return_reason"),
+        )
+        db.session.add(summary)
+        db.session.flush()
+
+        summary.add_history("Case created from clinical note")
+        summary.add_history("AI summary generated — awaiting doctor review")
+        if sample["workflow"] == WORKFLOW_SUBMITTED_TO_CODER:
+            summary.add_history("Submitted to medical coder")
+        if sample["workflow"] == WORKFLOW_RETURNED_FOR_CORRECTION:
+            summary.add_history("Submitted to medical coder")
+            summary.add_history("Returned for correction: " + sample["return_reason"])
 
 
 if __name__ == "__main__":

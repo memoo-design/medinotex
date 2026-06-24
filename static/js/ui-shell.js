@@ -60,16 +60,16 @@
   const NAV_CONFIG = {
     doctor: [
       { section: 'Main' },
-      { key: 'dashboard', label: 'Dashboard', href: 'doctor_dashboard.html', icon: 'dashboard' },
-      { key: 'patients', label: 'Patients', href: 'doctor_dashboard.html#patients', icon: 'patients' },
-      { key: 'upload', label: 'Upload Clinical Note', href: 'doctor_dashboard.html#upload', icon: 'upload' },
-      { key: 'summaries', label: 'AI Summaries', href: 'doctor_dashboard.html#summaries', icon: 'summaries', badge: 'New' },
+      { key: 'dashboard', label: 'Dashboard', href: '/#dashboard', icon: 'dashboard' },
+      { key: 'patients', label: 'Patients', href: '/#patients', icon: 'patients' },
+      { key: 'upload', label: 'Upload Clinical Note', href: '/#upload', icon: 'upload' },
+      { key: 'summaries', label: 'AI Summaries', href: '/#summaries', icon: 'summaries', badge: 'New' },
       { section: 'Clinical' },
-      { key: 'appointments', label: 'Appointments', href: 'doctor_dashboard.html#appointments', icon: 'appointments' },
-      { key: 'history', label: 'Medical History', href: 'doctor_dashboard.html#history', icon: 'history' },
-      { key: 'notifications', label: 'Notifications', href: 'doctor_dashboard.html#notifications', icon: 'notifications' },
+      { key: 'appointments', label: 'Appointments', href: '/#appointments', icon: 'appointments' },
+      { key: 'history', label: 'Medical History', href: '/#history', icon: 'history' },
+      { key: 'notifications', label: 'Notifications', href: '/#notifications', icon: 'notifications' },
       { section: 'Account' },
-      { key: 'profile', label: 'Profile', href: 'profile.html', icon: 'profile' },
+      { key: 'profile', label: 'Profile', href: '/#profile', icon: 'profile' },
     ],
     coder: [
       { section: 'Main' },
@@ -83,7 +83,7 @@
       { key: 'billing', label: 'Billing Reports', href: 'medinotex_coder.html#billing', icon: 'reports' },
       { key: 'analytics', label: 'Analytics', href: 'analytics.html', icon: 'analytics' },
       { section: 'Account' },
-      { key: 'profile', label: 'Profile', href: 'profile.html', icon: 'profile' },
+      { key: 'profile', label: 'Profile', href: '/#profile', icon: 'profile' },
     ],
     admin: [
       { section: 'Management' },
@@ -97,7 +97,7 @@
       { key: 'logs', label: 'System Logs', href: 'admin-dashboard.html#logs', icon: 'logs' },
       { key: 'settings', label: 'Settings', href: 'admin-dashboard.html#settings', icon: 'settings' },
       { section: 'Account' },
-      { key: 'profile', label: 'Profile', href: 'profile.html', icon: 'profile' },
+      { key: 'profile', label: 'Profile', href: '/#profile', icon: 'profile' },
     ],
     super_admin: [
       { section: 'Platform' },
@@ -108,7 +108,7 @@
       { key: 'logs', label: 'Global Audit Log', href: 'super-admin.html#logs', icon: 'logs' },
       { key: 'settings', label: 'System Settings', href: 'super-admin.html#settings', icon: 'settings' },
       { section: 'Account' },
-      { key: 'profile', label: 'Profile', href: 'profile.html', icon: 'profile' },
+      { key: 'profile', label: 'Profile', href: '/#profile', icon: 'profile' },
     ],
     patient: [
       { section: 'Main' },
@@ -185,7 +185,7 @@
                 '<div style="color:rgba(147,197,253,.5);font-size:10px">' + MNX.escapeHTML(roleLabel) + '</div>' +
               '</div>' +
             '</div>' +
-            '<a href="login.html" class="mnx-nav-item" style="color:rgba(255,180,180,.75);margin-top:8px" id="mnxLogoutLink">' + svg('logout') + '<span class="mnx-nav-label">Logout</span></a>' +
+            '<a href="/login" class="mnx-nav-item" style="color:rgba(255,180,180,.75);margin-top:8px" id="mnxLogoutLink">' + svg('logout') + '<span class="mnx-nav-label">Logout</span></a>' +
           '</div>' +
         '</aside>';
     }

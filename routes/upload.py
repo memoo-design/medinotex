@@ -1,9 +1,10 @@
 """
 Upload Routes
-POST /api/upload/file   – upload PDF/DOCX/TXT to Azure Blob Storage
-POST /api/upload/text   – submit typed clinical note text
-GET  /api/upload/<id>   – get note details + SAS download URL
-DELETE /api/upload/<id> – delete note + blob
+GET  /api/upload/           – list clinical notes for this doctor
+POST /api/upload/file       – upload PDF/DOCX/TXT to Azure Blob Storage
+POST /api/upload/text       – submit typed clinical note text
+GET  /api/upload/<id>       – get note details + SAS download URL
+DELETE /api/upload/<id>     – delete note + blob
 """
 import io
 from flask import Blueprint, request, jsonify, current_app
@@ -15,6 +16,7 @@ from models.clinical import ClinicalNote
 from models.patient import Patient
 from services.blob_storage import upload_file_to_blob, generate_sas_url, delete_blob
 from services.document_intelligence import extract_text_from_document
+from services.audit import log_audit
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -25,6 +27,46 @@ CONTENT_TYPES = {
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "txt":  "text/plain",
 }
+
+
+@upload_bp.get("/")
+@login_required
+def list_notes():
+    """List clinical notes for the logged-in doctor."""
+    page       = int(request.args.get("page", 1))
+    per        = int(request.args.get("per_page", 20))
+    patient_id = request.args.get("patient_id")
+    processed  = request.args.get("processed")
+
+    query = ClinicalNote.query.filter_by(doctor_id=current_user.id)
+
+    if patient_id:
+        query = query.filter_by(patient_id=int(patient_id))
+    if processed is not None:
+        query = query.filter_by(processed=processed.lower() in ("true", "1", "yes"))
+
+    paginated = (
+        query
+        .order_by(ClinicalNote.created_at.desc())
+        .paginate(page=page, per_page=per, error_out=False)
+    )
+
+    notes = []
+    for note in paginated.items:
+        data = note.to_dict()
+        data["patient_name"] = note.patient.name if note.patient else None
+        data["has_summary"] = note.summary is not None
+        if note.summary:
+            data["summary_id"] = note.summary.id
+            data["workflow_status"] = note.summary.workflow_status
+        notes.append(data)
+
+    return jsonify({
+        "notes": notes,
+        "total": paginated.total,
+        "page":  paginated.page,
+        "pages": paginated.pages,
+    }), 200
 
 
 @upload_bp.post("/file")
@@ -94,6 +136,9 @@ def upload_file():
 
     db.session.commit()
 
+    log_audit(current_user.id, "note_uploaded", "clinical_note", note.id,
+              {"source_type": "file", "patient_id": note.patient_id})
+
     return jsonify({
         "message":   "File uploaded and text extracted",
         "note":      note.to_dict(),
@@ -141,6 +186,9 @@ def upload_text():
     patient.last_visit  = datetime.utcnow()
 
     db.session.commit()
+
+    log_audit(current_user.id, "note_uploaded", "clinical_note", note.id,
+              {"source_type": "text", "patient_id": note.patient_id})
 
     return jsonify({"message": "Note saved", "note": note.to_dict()}), 201
 

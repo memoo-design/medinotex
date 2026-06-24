@@ -2,6 +2,15 @@ from extensions import db
 from datetime import datetime
 
 
+# Workflow statuses aligned with the doctor frontend case lifecycle
+WORKFLOW_AI_DONE = "ai_done"
+WORKFLOW_DOCTOR_REVIEW = "doctor_review"
+WORKFLOW_SUBMITTED_TO_CODER = "submitted_to_coder"
+WORKFLOW_CODER_REVIEW = "coder_review"
+WORKFLOW_RETURNED_FOR_CORRECTION = "returned_for_correction"
+WORKFLOW_RELEASED_TO_PATIENT = "released_to_patient"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 class ClinicalNote(db.Model):
     """Uploaded clinical document / typed note."""
@@ -71,14 +80,28 @@ class AISummary(db.Model):
     entities     = db.Column(db.Text,    nullable=True)   # JSON list
     risk_score   = db.Column(db.String(10), nullable=True)
 
+    # Doctor → coder workflow
+    workflow_status      = db.Column(db.String(40), default=WORKFLOW_DOCTOR_REVIEW)
+    coder_return_reason  = db.Column(db.Text,       nullable=True)
+    ai_confidence        = db.Column(db.Integer,    nullable=True)
+    submitted_at         = db.Column(db.DateTime,   nullable=True)
+    updated_at           = db.Column(db.DateTime,   default=datetime.utcnow, onupdate=datetime.utcnow)
+
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def to_dict(self):
+    history_events = db.relationship(
+        "CaseHistory", backref="summary", lazy="dynamic",
+        cascade="all, delete-orphan", order_by="CaseHistory.created_at",
+    )
+
+    def to_dict(self, include_history=False):
         import json
-        return {
+        data = {
             "id":          self.id,
             "note_id":     self.note_id,
             "patient_id":  self.patient_id,
+            "patient_name": self.patient.name if self.patient else None,
+            "visit_type":  self.note.visit_type if self.note else None,
             "subjective":  self.subjective,
             "objective":   self.objective,
             "assessment":  self.assessment,
@@ -86,8 +109,21 @@ class AISummary(db.Model):
             "key_phrases": json.loads(self.key_phrases) if self.key_phrases else [],
             "entities":    json.loads(self.entities)    if self.entities    else [],
             "risk_score":  self.risk_score,
+            "workflow_status": self.workflow_status,
+            "coder_return_reason": self.coder_return_reason,
+            "ai_confidence": self.ai_confidence,
+            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
             "created_at":  self.created_at.isoformat(),
+            "updated_at":  self.updated_at.isoformat() if self.updated_at else None,
         }
+        if include_history:
+            data["history"] = [h.to_dict() for h in self.history_events.all()]
+        return data
+
+    def add_history(self, event: str):
+        entry = CaseHistory(summary_id=self.id, event=event)
+        db.session.add(entry)
+        return entry
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -141,4 +177,47 @@ class Notification(db.Model):
             "message":    self.message,
             "is_read":    self.is_read,
             "created_at": self.created_at.isoformat(),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class CaseHistory(db.Model):
+    """Timeline events for a clinical case (summary workflow)."""
+    __tablename__ = "case_history"
+
+    id          = db.Column(db.Integer,     primary_key=True)
+    summary_id  = db.Column(db.Integer,     db.ForeignKey("ai_summaries.id"), nullable=False, index=True)
+    event       = db.Column(db.String(300), nullable=False)
+    created_at  = db.Column(db.DateTime,    default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "at":    self.created_at.isoformat(),
+            "event": self.event,
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class AuditLog(db.Model):
+    """Immutable audit trail for doctor actions."""
+    __tablename__ = "audit_logs"
+
+    id          = db.Column(db.Integer,     primary_key=True)
+    doctor_id   = db.Column(db.Integer,     db.ForeignKey("users.id"), nullable=False, index=True)
+    action      = db.Column(db.String(80),  nullable=False)
+    entity_type = db.Column(db.String(40),  nullable=True)
+    entity_id   = db.Column(db.Integer,     nullable=True)
+    details     = db.Column(db.Text,        nullable=True)
+    created_at  = db.Column(db.DateTime,    default=datetime.utcnow)
+
+    def to_dict(self):
+        import json
+        return {
+            "id":          self.id,
+            "actor_id":    self.doctor_id,
+            "action":      self.action,
+            "entity_type": self.entity_type,
+            "entity_id":   self.entity_id,
+            "details":     json.loads(self.details) if self.details else None,
+            "at":          self.created_at.isoformat(),
         }

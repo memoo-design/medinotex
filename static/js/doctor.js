@@ -8,9 +8,60 @@
 (function () {
   'use strict';
 
-  const DOCTOR_ID = 'u-doc-1';
   const { escapeHTML, showToast, openModal, closeModal, simulateDelay, setButtonBusy,
           renderSkeletonRows, renderSkeletonCards, renderEmptyState } = MNX;
+
+  const STATUS = MockDB.STATUS;
+  const STATUS_LABELS = MockDB.STATUS_LABELS;
+  const STATUS_BADGE_CLASS = MockDB.STATUS_BADGE_CLASS;
+
+  let currentUser = null;
+  let patientsCache = [];
+  let summariesCache = [];
+
+  function summaryToCase(s) {
+    return {
+      id: String(s.id),
+      patientId: String(s.patient_id),
+      doctorId: String(currentUser.id),
+      status: s.workflow_status,
+      soap: {
+        subjective: s.subjective || '',
+        objective: s.objective || '',
+        assessment: s.assessment || '',
+        plan: s.plan || '',
+      },
+      aiConfidence: s.ai_confidence || 0,
+      createdAt: s.created_at,
+      updatedAt: s.updated_at || s.created_at,
+      history: s.history || [],
+      patientName: s.patient_name,
+      coderReturnReason: s.coder_return_reason,
+    };
+  }
+
+  function patientToUi(p) {
+    const parts = (p.name || '').split(' ');
+    return {
+      id: String(p.id),
+      firstName: parts[0] || '',
+      lastName: parts.slice(1).join(' ') || '',
+      age: p.age,
+      gender: p.sex,
+      diagnosis: p.diagnosis,
+      status: p.status,
+      primaryDoctorId: String(currentUser.id),
+    };
+  }
+
+  async function refreshData() {
+    const [patientsRes, summariesRes] = await Promise.all([
+      MNXApi.listPatients({ per_page: 100 }),
+      MNXApi.listSummaries({ per_page: 100 }),
+    ]);
+    patientsCache = (patientsRes.patients || []).map(patientToUi);
+    summariesCache = (summariesRes.summaries || []).map(summaryToCase);
+  }
 
   // ----------------------------------------------------------
   // Stepper state (Upload -> OCR -> AI -> Doctor Review -> Submit)
@@ -30,15 +81,37 @@
   // ----------------------------------------------------------
   // Boot
   // ----------------------------------------------------------
-  document.addEventListener('DOMContentLoaded', () => {
-    UIShell.render({ role: 'doctor', activeKey: 'dashboard', userId: DOCTOR_ID, pageTitle: 'Dashboard' });
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      currentUser = await MNXApi.me();
+    } catch (e) {
+      window.location.href = '/login';
+      return;
+    }
+
+    await refreshData();
+
+    UIShell.render({
+      role: 'doctor',
+      activeKey: 'dashboard',
+      userId: String(currentUser.id),
+      pageTitle: 'Dashboard',
+      userName: currentUser.full_name,
+    });
+
+    const greeting = document.querySelector('#page-dashboard h1');
+    if (greeting && currentUser.full_name) {
+      const first = currentUser.full_name.replace(/^Dr\.?\s*/i, '').split(' ')[0];
+      greeting.textContent = 'Good morning, Dr. ' + first + ' 👋';
+    }
+
     document.getElementById('current-date').textContent =
       new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     wireNav();
     wireUploadPanel();
     wireModals();
-    MockDB.subscribe(() => refreshBadgesAndCounts()); // live refresh if data changes (e.g. cross-tab)
+    refreshBadgesAndCounts();
 
     routeFromHash();
     window.addEventListener('hashchange', routeFromHash);
@@ -56,7 +129,7 @@
       const link = e.target.closest('.mnx-nav-item[data-nav-key]');
       if (!link) return;
       const href = link.getAttribute('href') || '';
-      if (href.indexOf('doctor_dashboard.html#') === 0 || href.indexOf('#') === 0) {
+      if (href.indexOf('doctor_dashboard.html#') === 0 || href.indexOf('/#') === 0 || href.indexOf('#') === 0) {
         e.preventDefault();
         const key = href.split('#')[1];
         location.hash = key;
@@ -95,18 +168,20 @@
   // Helpers
   // ----------------------------------------------------------
   function myPatients() {
-    return MockDB.getUsersByRole('patient').filter((p) => p.primaryDoctorId === DOCTOR_ID);
+    return patientsCache;
   }
   function myCases() {
-    return MockDB.getCases({ doctorId: DOCTOR_ID }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    return summariesCache.slice().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
   function patientName(id) {
-    const p = MockDB.getUser(id);
-    return p ? p.firstName + ' ' + p.lastName : 'Unknown Patient';
+    const p = myPatients().find((x) => x.id === String(id));
+    if (p) return p.firstName + ' ' + p.lastName;
+    const c = myCases().find((x) => x.patientId === String(id));
+    return c && c.patientName ? c.patientName : 'Unknown Patient';
   }
   function statusBadge(status) {
-    const cls = MockDB.STATUS_BADGE_CLASS[status] || 'bdg-draft';
-    const label = MockDB.STATUS_LABELS[status] || status;
+    const cls = STATUS_BADGE_CLASS[status] || 'bdg-draft';
+    const label = STATUS_LABELS[status] || status;
     return '<span class="bdg ' + cls + '"><span class="bdg-dot"></span>' + escapeHTML(label) + '</span>';
   }
   function fmtDate(iso) {
@@ -114,7 +189,7 @@
   }
 
   function refreshBadgesAndCounts() {
-    const needsRevisionCount = myCases().filter((c) => c.status === MockDB.STATUS.RETURNED_FOR_CORRECTION).length;
+    const needsRevisionCount = myCases().filter((c) => c.status === STATUS.RETURNED_FOR_CORRECTION).length;
     const navItem = document.querySelector('.mnx-nav-item[data-nav-key="summaries"] .mnx-nav-badge');
     // dynamic badge: show count of cases needing revision next to "AI Summaries" if any exist
     const summariesLink = document.querySelector('.mnx-nav-item[data-nav-key="summaries"]');
@@ -133,14 +208,16 @@
     }
     const notifBtn = document.getElementById('mnxNotifBtn');
     if (notifBtn) {
-      const unread = MockDB.getNotifications({ userId: DOCTOR_ID, unreadOnly: true }).length;
-      let dot = notifBtn.querySelector('.mnx-notif-dot');
-      if (unread > 0) {
-        if (!dot) {
-          dot = document.createElement('span'); dot.className = 'mnx-notif-dot'; notifBtn.appendChild(dot);
-        }
-        dot.textContent = unread > 9 ? '9+' : unread;
-      } else if (dot) { dot.remove(); }
+      MNXApi.listNotifications().then((res) => {
+        const unread = res.unread_count || 0;
+        let dot = notifBtn.querySelector('.mnx-notif-dot');
+        if (unread > 0) {
+          if (!dot) {
+            dot = document.createElement('span'); dot.className = 'mnx-notif-dot'; notifBtn.appendChild(dot);
+          }
+          dot.textContent = unread > 9 ? '9+' : unread;
+        } else if (dot) { dot.remove(); }
+      }).catch(() => {});
     }
   }
 
@@ -151,15 +228,32 @@
     const cases = myCases();
     const patients = myPatients();
     const pendingReview = cases.filter((c) =>
-      [MockDB.STATUS.DOCTOR_REVIEW, MockDB.STATUS.RETURNED_FOR_CORRECTION].includes(c.status)).length;
+      [STATUS.DOCTOR_REVIEW, STATUS.RETURNED_FOR_CORRECTION].includes(c.status)).length;
 
-    setText('statPatients', patients.length);
-    setText('statNotes', cases.length);
-    setText('statSummaries', cases.filter((c) => c.aiConfidence).length);
-    setText('statPending', pendingReview);
+    MNXApi.dashboardStats().then((stats) => {
+      setText('statPatients', stats.total_patients ?? patients.length);
+      setText('statNotes', stats.notes_this_week ?? cases.length);
+      setText('statSummaries', stats.ai_summaries ?? cases.filter((c) => c.aiConfidence).length);
+      setText('statPending', pendingReview);
 
-    // AI engine widget — real count instead of hardcoded "3 notes queued"
-    setText('aiWidgetCount', pendingReview + ' note' + (pendingReview === 1 ? '' : 's') + ' need' + (pendingReview === 1 ? 's' : '') + ' your review');
+      setText('aiWidgetCount', pendingReview + ' note' + (pendingReview === 1 ? '' : 's') + ' need' + (pendingReview === 1 ? 's' : '') + ' your review');
+
+      const revisionAlert = document.getElementById('dashRevisionAlert');
+      const revisionCount = stats.revisions_needed ?? cases.filter((c) => c.status === STATUS.RETURNED_FOR_CORRECTION).length;
+      if (revisionAlert) {
+        if (revisionCount === 0) {
+          revisionAlert.classList.add('hidden');
+        } else {
+          revisionAlert.classList.remove('hidden');
+          revisionAlert.querySelector('.revision-count').textContent = revisionCount;
+        }
+      }
+    }).catch(() => {
+      setText('statPatients', patients.length);
+      setText('statNotes', cases.length);
+      setText('statSummaries', cases.filter((c) => c.aiConfidence).length);
+      setText('statPending', pendingReview);
+    });
 
     // Recent cases table
     const tbody = document.getElementById('recentCasesBody');
@@ -178,18 +272,7 @@
       }
     }
 
-    // Needs-revision mini-alert on dashboard
-    const revisionAlert = document.getElementById('dashRevisionAlert');
-    const revisionCases = cases.filter((c) => c.status === MockDB.STATUS.RETURNED_FOR_CORRECTION);
-    if (revisionAlert) {
-      if (revisionCases.length === 0) {
-        revisionAlert.classList.add('hidden');
-      } else {
-        revisionAlert.classList.remove('hidden');
-        revisionAlert.querySelector('.revision-count').textContent = revisionCases.length;
-      }
-    }
-
+    // Needs-revision mini-alert handled via dashboardStats above
     refreshBadgesAndCounts();
   }
   function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
@@ -251,7 +334,7 @@
   function populateUploadPatientSelect() {
     const sel = document.getElementById('uploadPatientSelect');
     if (!sel || sel.dataset.populated) return;
-    sel.innerHTML = myPatients().map((p) => '<option value="' + p.id + '">' + escapeHTML(p.firstName + ' ' + p.lastName) + ' — #' + p.id.slice(-4).toUpperCase() + '</option>').join('');
+    sel.innerHTML = myPatients().map((p) => '<option value="' + p.id + '">' + escapeHTML(p.firstName + ' ' + p.lastName) + ' — #' + String(p.id).slice(-4).toUpperCase() + '</option>').join('');
     sel.dataset.populated = '1';
   }
 
@@ -362,19 +445,44 @@
 
     const btn = document.getElementById('startProcessingBtn');
     const restore = setButtonBusy(btn, 'Starting…');
-    await simulateDelay(300, 600);
-    restore();
 
-    stepIndex = 1; // -> OCR (or skip straight to AI for typed notes)
-    renderStepper();
+    try {
+      let noteId;
+      if (pendingUploadFile) {
+        stepIndex = 1;
+        renderStepper();
+        await runOcrStep();
 
-    if (pendingUploadFile) {
-      await runOcrStep();
-    } else {
-      stepIndex = 2;
+        const fd = new FormData();
+        fd.append('clinical_file', pendingUploadFile);
+        fd.append('patient_id', patientId);
+        fd.append('visit_type', visitType);
+        fd.append('use_soap', 'true');
+        fd.append('use_diagnosis', 'true');
+        fd.append('use_treatment', 'true');
+        fd.append('use_risk', 'false');
+
+        const uploadRes = await MNXApi.uploadFile(fd);
+        noteId = uploadRes.note.id;
+      } else {
+        stepIndex = 2;
+        renderStepper();
+        const uploadRes = await MNXApi.uploadText({
+          patient_id: parseInt(patientId, 10),
+          visit_type: visitType,
+          text,
+        });
+        noteId = uploadRes.note.id;
+      }
+
+      await runAiStep(noteId);
+    } catch (err) {
+      showToast(err.message || 'Upload failed', 'danger');
+      stepIndex = 0;
       renderStepper();
+    } finally {
+      restore();
     }
-    await runAiStep(patientId, visitType, text);
   }
 
   async function runOcrStep() {
@@ -391,26 +499,22 @@
     renderStepper();
   }
 
-  async function runAiStep(patientId, visitType, rawText) {
+  async function runAiStep(noteId) {
     const msgEl = document.getElementById('aiStatusMsg');
     const bar = document.getElementById('aiProgressBar');
     const steps = ['Parsing clinical content…', 'Extracting key symptoms…', 'Analyzing diagnosis patterns…', 'Generating SOAP structure…', 'Finalizing summary…'];
     for (let i = 0; i < steps.length; i++) {
       if (msgEl) msgEl.textContent = steps[i];
       if (bar) bar.style.width = Math.round(((i + 1) / steps.length) * 100) + '%';
-      await simulateDelay(450, 750);
+      await simulateDelay(200, 400);
     }
 
-    const soapDraft = buildSoapDraft(patientId, visitType, rawText);
-    const newCase = MockDB.createCase({
-      patientId, doctorId: DOCTOR_ID,
-      sourceType: pendingUploadFile ? 'upload' : 'typed',
-      soapDraft,
-    });
-    MockDB.updateCaseStatus(newCase.id, MockDB.STATUS.DOCTOR_REVIEW, 'AI summary ready — awaiting doctor review');
+    const res = await MNXApi.generateSummary(noteId);
+    const newCase = summaryToCase(res.summary);
     activeCaseId = newCase.id;
+    await refreshData();
 
-    showToast('AI summary generated (' + newCase.aiConfidence + '% confidence).', 'success');
+    showToast('AI summary generated (' + (newCase.aiConfidence || '—') + '% confidence).', 'success');
     stepIndex = 3;
     renderStepper();
     loadCaseIntoReview(newCase.id);
@@ -431,7 +535,7 @@
   }
 
   function loadCaseIntoReview(caseId) {
-    const c = MockDB.getCase(caseId);
+    const c = myCases().find((x) => x.id === String(caseId));
     if (!c) return;
     document.getElementById('reviewPatientName').textContent = patientName(c.patientId);
     document.getElementById('reviewConfidence').textContent = c.aiConfidence + '%';
@@ -447,17 +551,22 @@
     if (!activeCaseId) return;
     const btn = document.getElementById('saveSoapBtn');
     const restore = setButtonBusy(btn, 'Saving…');
-    await simulateDelay(300, 500);
-    MockDB.updateSoap(activeCaseId, {
-      subjective: document.querySelector('[data-soap-field="subjective"]').value,
-      objective: document.querySelector('[data-soap-field="objective"]').value,
-      assessment: document.querySelector('[data-soap-field="assessment"]').value,
-      plan: document.querySelector('[data-soap-field="plan"]').value,
-    });
-    restore('Save Changes');
-    soapDirty = false;
-    document.getElementById('unsavedIndicator')?.classList.add('hidden');
-    showToast('SOAP note saved.', 'success');
+    try {
+      await MNXApi.updateSummary(activeCaseId, {
+        subjective: document.querySelector('[data-soap-field="subjective"]').value,
+        objective: document.querySelector('[data-soap-field="objective"]').value,
+        assessment: document.querySelector('[data-soap-field="assessment"]').value,
+        plan: document.querySelector('[data-soap-field="plan"]').value,
+      });
+      await refreshData();
+      soapDirty = false;
+      document.getElementById('unsavedIndicator')?.classList.add('hidden');
+      showToast('SOAP note saved.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Save failed', 'danger');
+    } finally {
+      restore('Save Changes');
+    }
   }
 
   async function handleSubmitToCoder() {
@@ -465,21 +574,25 @@
     if (soapDirty) { await handleSaveSoap(); }
     const btn = document.getElementById('submitToCoderBtn');
     const restore = setButtonBusy(btn, 'Submitting…');
-    await simulateDelay(500, 900);
-    MockDB.submitToCoder(activeCaseId);
-    restore('Submit to Coder');
-    stepIndex = 4;
-    renderStepper();
-    showToast('Case submitted to the medical coder.', 'success', 'Submitted');
-    renderDashboard();
+    try {
+      await MNXApi.submitToCoder(activeCaseId);
+      await refreshData();
+      stepIndex = 4;
+      renderStepper();
+      showToast('Case submitted to the medical coder.', 'success', 'Submitted');
+      renderDashboard();
+    } catch (err) {
+      showToast(err.message || 'Submit failed', 'danger');
+    } finally {
+      restore('Submit to Coder');
+    }
   }
 
   /** Entry point used by the Needs Revision list to jump straight to Step 4 with the case pre-loaded. */
   function reviseCase(caseId) {
-    const c = MockDB.getCase(caseId);
+    const c = myCases().find((x) => x.id === String(caseId));
     if (!c) return;
-    MockDB.updateCaseStatus(caseId, MockDB.STATUS.DOCTOR_REVIEW, 'Doctor revising returned case');
-    activeCaseId = caseId;
+    activeCaseId = c.id;
     stepIndex = 3;
     location.hash = 'upload';
     setTimeout(() => { renderStepper(); loadCaseIntoReview(caseId); }, 50);
@@ -519,7 +632,7 @@
   }
 
   function openSoapViewer(caseId) {
-    const c = MockDB.getCase(caseId);
+    const c = myCases().find((x) => x.id === String(caseId));
     if (!c) return;
     document.getElementById('soapModalPatient').textContent = patientName(c.patientId) + ' — AI SOAP Summary';
     document.getElementById('soapModalMeta').textContent = fmtDate(c.createdAt) + ' · ' + c.aiConfidence + '% AI confidence';
@@ -544,27 +657,31 @@
   function renderNeedsRevision() {
     const container = document.getElementById('revisionsList');
     if (!container) return;
-    const cases = myCases().filter((c) => c.status === MockDB.STATUS.RETURNED_FOR_CORRECTION);
-    if (cases.length === 0) {
-      renderEmptyState(container, { icon: '✅', title: 'Nothing needs revision', desc: 'Cases returned by the coder will appear here.' });
-      return;
-    }
-    container.innerHTML = cases.map((c) => {
-      const reasonEntry = c.history.slice().reverse().find((h) => h.event.indexOf('Returned for correction') === 0);
-      const reason = reasonEntry ? reasonEntry.event.replace('Returned for correction: ', '') : 'No reason provided';
-      return (
-        '<div class="card revision-card">' +
-          '<div class="card-bd">' +
-            '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:8px">' +
-              '<div style="font-weight:700;color:var(--t1)">' + escapeHTML(patientName(c.patientId)) + '</div>' +
-              statusBadge(c.status) +
+    MNXApi.listRevisions().then((items) => {
+      const cases = items.map(summaryToCase);
+      if (cases.length === 0) {
+        renderEmptyState(container, { icon: '✅', title: 'Nothing needs revision', desc: 'Cases returned by the coder will appear here.' });
+        return;
+      }
+      container.innerHTML = cases.map((c) => {
+        const reasonEntry = c.history.slice().reverse().find((h) => h.event.indexOf('Returned for correction') === 0);
+        const reason = reasonEntry ? reasonEntry.event.replace('Returned for correction: ', '') : (c.coderReturnReason || 'No reason provided');
+        return (
+          '<div class="card revision-card">' +
+            '<div class="card-bd">' +
+              '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:8px">' +
+                '<div style="font-weight:700;color:var(--t1)">' + escapeHTML(patientName(c.patientId)) + '</div>' +
+                statusBadge(c.status) +
+              '</div>' +
+              '<div style="font-size:12.5px;color:var(--t2);margin-bottom:10px"><strong>Coder note:</strong> ' + escapeHTML(reason) + '</div>' +
+              '<button class="btn btn-primary btn-sm" onclick="MNX_reviseCase(\'' + c.id + '\')">Revise &amp; Resubmit</button>' +
             '</div>' +
-            '<div style="font-size:12.5px;color:var(--t2);margin-bottom:10px"><strong>Coder note:</strong> ' + escapeHTML(reason) + '</div>' +
-            '<button class="btn btn-primary btn-sm" onclick="MNX_reviseCase(\'' + c.id + '\')">Revise &amp; Resubmit</button>' +
-          '</div>' +
-        '</div>'
-      );
-    }).join('');
+          '</div>'
+        );
+      }).join('');
+    }).catch(() => {
+      renderEmptyState(container, { icon: '⚠️', title: 'Could not load revisions' });
+    });
   }
 
   // ----------------------------------------------------------
@@ -573,23 +690,26 @@
   function renderAppointments() {
     const container = document.getElementById('appointmentsList');
     if (!container) return;
-    const apts = MockDB.getAppointments({ doctorId: DOCTOR_ID });
-    if (apts.length === 0) {
-      renderEmptyState(container, { icon: '📅', title: 'No appointments scheduled' });
-      return;
-    }
-    container.innerHTML = apts.map((a) => (
-      '<div class="card card-lift">' +
-        '<div class="card-bd">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
-            '<span class="bdg bdg-pending">' + new Date(a.scheduledAt).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) + '</span>' +
-            '<span class="bdg bdg-' + (a.status === 'confirmed' ? 'approved' : 'pending') + '">' + escapeHTML(a.status) + '</span>' +
+    MNXApi.listAppointments().then((apts) => {
+      if (apts.length === 0) {
+        renderEmptyState(container, { icon: '📅', title: 'No appointments scheduled' });
+        return;
+      }
+      container.innerHTML = apts.map((a) => (
+        '<div class="card card-lift">' +
+          '<div class="card-bd">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+              '<span class="bdg bdg-pending">' + new Date(a.scheduled_at).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) + '</span>' +
+              '<span class="bdg bdg-' + (a.status === 'scheduled' ? 'approved' : 'pending') + '">' + escapeHTML(a.status) + '</span>' +
+            '</div>' +
+            '<div style="font-weight:700;color:var(--t1)">' + escapeHTML(a.patient_name || 'Patient') + '</div>' +
+            '<div style="font-size:12.5px;color:var(--t3)">' + escapeHTML(a.title || a.visit_type) + '</div>' +
           '</div>' +
-          '<div style="font-weight:700;color:var(--t1)">' + escapeHTML(patientName(a.patientId)) + '</div>' +
-          '<div style="font-size:12.5px;color:var(--t3)">' + escapeHTML(a.reason || a.visitType) + '</div>' +
-        '</div>' +
-      '</div>'
-    )).join('');
+        '</div>'
+      )).join('');
+    }).catch(() => {
+      renderEmptyState(container, { icon: '⚠️', title: 'Could not load appointments' });
+    });
   }
 
   // ----------------------------------------------------------
@@ -606,21 +726,22 @@
   }
   function renderHistoryTimeline(patientId) {
     const container = document.getElementById('historyTimeline');
-    if (!container) return;
-    const cases = myCases().filter((c) => c.patientId === patientId);
-    if (cases.length === 0) {
-      renderEmptyState(container, { icon: '🕓', title: 'No history yet for this patient' });
-      return;
-    }
-    let entries = [];
-    cases.forEach((c) => c.history.forEach((h) => entries.push({ at: h.at, event: h.event, caseId: c.id })));
-    entries.sort((a, b) => new Date(b.at) - new Date(a.at));
-    container.innerHTML = entries.map((e) => (
-      '<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">' +
-        '<div style="font-size:11px;color:var(--t3);white-space:nowrap;width:90px">' + fmtDate(e.at) + '</div>' +
-        '<div style="font-size:13px;color:var(--t1)">' + escapeHTML(e.event) + '</div>' +
-      '</div>'
-    )).join('');
+    if (!container || !patientId) return;
+    MNXApi.patientHistory(patientId).then((res) => {
+      const entries = res.entries || [];
+      if (entries.length === 0) {
+        renderEmptyState(container, { icon: '🕓', title: 'No history yet for this patient' });
+        return;
+      }
+      container.innerHTML = entries.map((e) => (
+        '<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">' +
+          '<div style="font-size:11px;color:var(--t3);white-space:nowrap;width:90px">' + fmtDate(e.at) + '</div>' +
+          '<div style="font-size:13px;color:var(--t1)">' + escapeHTML(e.event) + '</div>' +
+        '</div>'
+      )).join('');
+    }).catch(() => {
+      renderEmptyState(container, { icon: '⚠️', title: 'Could not load history' });
+    });
   }
 
   // ----------------------------------------------------------
@@ -629,28 +750,36 @@
   function renderNotifications() {
     const container = document.getElementById('notificationsList');
     if (!container) return;
-    const notifs = MockDB.getNotifications({ userId: DOCTOR_ID });
-    if (notifs.length === 0) {
-      renderEmptyState(container, { icon: '🔔', title: 'No notifications' });
-      return;
-    }
-    container.innerHTML = notifs.map((n) => (
-      '<div class="card" style="margin-bottom:8px;' + (n.isRead ? '' : 'border-left:3px solid var(--primary)') + '" data-notif="' + n.id + '">' +
-        '<div class="card-bd" style="display:flex;justify-content:space-between;gap:10px">' +
-          '<div><div style="font-weight:700;font-size:13px;color:var(--t1)">' + escapeHTML(n.title) + '</div>' +
-          '<div style="font-size:12.5px;color:var(--t2);margin-top:2px">' + escapeHTML(n.body) + '</div>' +
-          '<div style="font-size:11px;color:var(--t3);margin-top:6px">' + new Date(n.createdAt).toLocaleString() + '</div></div>' +
-          (n.isRead ? '' : '<button class="btn btn-ghost btn-xs" data-mark-read="' + n.id + '">Mark read</button>') +
-        '</div>' +
-      '</div>'
-    )).join('');
-    container.querySelectorAll('[data-mark-read]').forEach((btn) => {
-      btn.addEventListener('click', () => { MockDB.markNotificationRead(btn.getAttribute('data-mark-read')); renderNotifications(); refreshBadgesAndCounts(); });
+    MNXApi.listNotifications().then((res) => {
+      const notifs = res.notifications || [];
+      if (notifs.length === 0) {
+        renderEmptyState(container, { icon: '🔔', title: 'No notifications' });
+        return;
+      }
+      container.innerHTML = notifs.map((n) => (
+        '<div class="card" style="margin-bottom:8px;' + (n.is_read ? '' : 'border-left:3px solid var(--primary)') + '" data-notif="' + n.id + '">' +
+          '<div class="card-bd" style="display:flex;justify-content:space-between;gap:10px">' +
+            '<div><div style="font-weight:700;font-size:13px;color:var(--t1)">' + escapeHTML(n.title) + '</div>' +
+            '<div style="font-size:12.5px;color:var(--t2);margin-top:2px">' + escapeHTML(n.message) + '</div>' +
+            '<div style="font-size:11px;color:var(--t3);margin-top:6px">' + new Date(n.created_at).toLocaleString() + '</div></div>' +
+            (n.is_read ? '' : '<button class="btn btn-ghost btn-xs" data-mark-read="' + n.id + '">Mark read</button>') +
+          '</div>' +
+        '</div>'
+      )).join('');
+      container.querySelectorAll('[data-mark-read]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          await MNXApi.markNotificationRead(btn.getAttribute('data-mark-read'));
+          renderNotifications();
+          refreshBadgesAndCounts();
+        });
+      });
+    }).catch(() => {
+      renderEmptyState(container, { icon: '⚠️', title: 'Could not load notifications' });
     });
   }
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     if (e.target && e.target.id === 'markAllReadBtn') {
-      MockDB.markAllRead(DOCTOR_ID);
+      await MNXApi.markAllNotificationsRead();
       renderNotifications();
       refreshBadgesAndCounts();
       showToast('All notifications marked as read.', 'success');
@@ -661,33 +790,59 @@
   // PROFILE
   // ----------------------------------------------------------
   function renderProfile() {
-    const u = MockDB.getUser(DOCTOR_ID);
-    if (!u) return;
-    setText('profileName', u.firstName + ' ' + u.lastName);
-    setText('profileSpecialty', u.specialty + ' · ' + u.license);
-    setText('profileEmail', u.email);
-    setText('profileFacility', u.facility);
-    setText('profileDepartment', u.department);
+    if (!currentUser) return;
+    const parts = (currentUser.full_name || '').replace(/^Dr\.?\s*/i, '').split(' ');
+    setText('profileName', currentUser.full_name || '');
+    setText('profileSpecialty', currentUser.specialty || '—');
+    setText('profileEmail', currentUser.email || '');
+    setText('profileFacility', 'MediNoteX Clinical');
+    setText('profileDepartment', currentUser.specialty || '—');
   }
-  document.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'saveProfileBtn') showToast('Profile changes saved.', 'success');
+  document.addEventListener('click', async (e) => {
+    if (e.target && e.target.id === 'saveProfileBtn') {
+      try {
+        const res = await MNXApi.updateProfile({ full_name: document.getElementById('profileName')?.textContent });
+        currentUser = res.user;
+        showToast('Profile changes saved.', 'success');
+      } catch (err) {
+        showToast(err.message || 'Save failed', 'danger');
+      }
+    }
   });
 
   // ----------------------------------------------------------
   // MODALS (logout confirm, add patient)
   // ----------------------------------------------------------
   function wireModals() {
-    document.getElementById('confirmLogoutBtn')?.addEventListener('click', () => {
+    document.getElementById('confirmLogoutBtn')?.addEventListener('click', async () => {
       closeModal('logoutModal');
+      try {
+        await MNXApi.logout();
+      } catch (e) { /* ignore */ }
       showToast('Signed out.', 'info');
-      setTimeout(() => { window.location.href = 'login.html'; }, 600);
+      setTimeout(() => { window.location.href = '/login'; }, 600);
     });
     document.getElementById('mnxUserChip')?.addEventListener('click', () => { location.hash = 'profile'; });
 
-    document.getElementById('addPatientForm')?.addEventListener('submit', (e) => {
+    document.getElementById('addPatientForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showToast('Patient intake is finalized by Admin; this request has been queued. (Frontend demo — no backend yet.)', 'info');
-      closeModal('addPatientModal');
+      const first = document.getElementById('newPatientFirstName')?.value?.trim();
+      const last = document.getElementById('newPatientLastName')?.value?.trim();
+      const name = [first, last].filter(Boolean).join(' ');
+      const age = parseInt(document.getElementById('newPatientAge')?.value, 10);
+      const sex = document.getElementById('newPatientSex')?.value;
+      const diagnosis = document.getElementById('newPatientDiagnosis')?.value?.trim();
+      if (!name) { showToast('Patient name is required.', 'warning'); return; }
+      try {
+        await MNXApi.createPatient({ name, age: isNaN(age) ? null : age, sex, diagnosis });
+        await refreshData();
+        document.getElementById('uploadPatientSelect')?.removeAttribute('data-populated');
+        showToast('Patient added successfully.', 'success');
+        closeModal('addPatientModal');
+        if (location.hash.replace('#', '') === 'patients') renderPatients();
+      } catch (err) {
+        showToast(err.message || 'Could not add patient', 'danger');
+      }
     });
   }
 })();

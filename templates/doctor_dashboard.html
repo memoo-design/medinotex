@@ -319,11 +319,11 @@
     <div class="mnx-modal-hd"><span class="mnx-modal-title">Add New Patient</span><button class="mnx-modal-close" type="button" onclick="MNX.closeModal('addPatientModal')">&times;</button></div>
     <form id="addPatientForm">
       <div class="mnx-modal-bd grid grid-cols-2 gap-4">
-        <div><label class="mnx-form-label">First Name</label><input class="mnx-input" placeholder="John"></div>
-        <div><label class="mnx-form-label">Last Name</label><input class="mnx-input" placeholder="Smith"></div>
-        <div><label class="mnx-form-label">Date of Birth</label><input type="date" class="mnx-input"></div>
-        <div><label class="mnx-form-label">Gender</label><select class="mnx-input"><option>Male</option><option>Female</option><option>Other</option></select></div>
-        <div style="grid-column:1/-1"><label class="mnx-form-label">Reason for Visit</label><input class="mnx-input" placeholder="e.g. Hypertension follow-up"></div>
+        <div><label class="mnx-form-label">First Name</label><input id="newPatientFirstName" class="mnx-input" placeholder="John" required></div>
+        <div><label class="mnx-form-label">Last Name</label><input id="newPatientLastName" class="mnx-input" placeholder="Smith"></div>
+        <div><label class="mnx-form-label">Age</label><input id="newPatientAge" type="number" min="0" max="120" class="mnx-input" placeholder="45"></div>
+        <div><label class="mnx-form-label">Gender</label><select id="newPatientSex" class="mnx-input"><option value="M">Male</option><option value="F">Female</option><option value="O">Other</option></select></div>
+        <div style="grid-column:1/-1"><label class="mnx-form-label">Diagnosis / Reason</label><input id="newPatientDiagnosis" class="mnx-input" placeholder="e.g. Hypertension follow-up"></div>
       </div>
       <div class="mnx-modal-ft">
         <button type="button" class="btn btn-outline" onclick="MNX.closeModal('addPatientModal')">Cancel</button>
@@ -356,6 +356,7 @@
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mockDatabase.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ui-shell.js') }}"></script>
