@@ -7,23 +7,7 @@ window.addEventListener('load', function () {
   }
 });
 
-// ── Patient Registration Form Handler ────────────────────────────────────────
-function handlePatientRegister(e) {
-  if (e && e.preventDefault) e.preventDefault();
-  var emailEl = document.getElementById('regEmail');
-  var email = emailEl ? emailEl.value.trim() : '';
-  
-  var modalEl = document.getElementById('patientRegisterModal');
-  if (modalEl && typeof bootstrap !== 'undefined') {
-    var modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) modal.hide();
-  }
 
-  setTimeout(function () {
-    alert('Registration submitted! Please check your email (' + email + ') to verify your account.');
-  }, 300);
-  return false;
-}
 
 // ── Demo Modal Helper Functions ──────────────────────────────────────────────
 function resetDemoModal() {

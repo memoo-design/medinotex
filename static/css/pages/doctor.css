@@ -35,3 +35,34 @@
 
 /* Status pill row inside the stepper review card */
 .unsaved-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); display: inline-block; animation: pulse 1.5s infinite; }
+
+/* Profile Settings */
+.profile-settings-grid { display: grid; gap: 18px; max-width: 720px; }
+.profile-section-title { font-size: 15px; font-weight: 800; color: var(--t1); margin-bottom: 14px; }
+.profile-avatar-block { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.profile-avatar-wrap {
+  width: 96px; height: 96px; border-radius: 50%; overflow: hidden;
+  background: linear-gradient(135deg, var(--primary), #3b82f6);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border: 3px solid var(--border);
+}
+.profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar-initials { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -1px; }
+.profile-avatar-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.profile-hint { font-size: 11.5px; color: var(--t3); margin: 0; }
+.profile-form { display: flex; flex-direction: column; gap: 12px; }
+.profile-form-row { display: flex; flex-direction: column; gap: 5px; }
+.mnx-input-readonly {
+  background: var(--bg);
+  color: var(--t2);
+  cursor: not-allowed;
+  border-color: var(--border);
+}
+.mnx-input-readonly:focus {
+  outline: none;
+  box-shadow: none;
+}
+.profile-avatar-img.hidden, .profile-avatar-initials.hidden { display: none; }
+.mnx-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.mnx-avatar.has-img { padding: 0; overflow: hidden; background: var(--border); }
+.mnx-topbar-avatar { width: 34px; height: 34px; }

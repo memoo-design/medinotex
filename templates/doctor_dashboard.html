@@ -280,17 +280,88 @@
       <div id="notificationsList" class="fu"></div>
     </section>
 
-    <!-- ══════ PROFILE ══════ -->
+    <!-- ══════ PROFILE SETTINGS ══════ -->
     <section id="page-profile" class="page-section">
-      <div class="mb-5 fu"><h1 style="font-size:20px;font-weight:900;color:var(--t1)">My Profile</h1></div>
-      <div class="card fu" style="max-width:560px">
-        <div class="card-bd" style="display:flex;flex-direction:column;gap:10px">
-          <div style="font-size:18px;font-weight:800;color:var(--t1)" id="profileName"></div>
-          <div style="font-size:13px;color:var(--t2)" id="profileSpecialty"></div>
-          <div style="font-size:12.5px;color:var(--t3)">Email: <span id="profileEmail"></span></div>
-          <div style="font-size:12.5px;color:var(--t3)">Facility: <span id="profileFacility"></span></div>
-          <div style="font-size:12.5px;color:var(--t3)">Department: <span id="profileDepartment"></span></div>
-          <button id="saveProfileBtn" class="btn btn-primary btn-sm" style="margin-top:10px;width:fit-content" type="button">Save Changes</button>
+      <div class="mb-5 fu"><h1 style="font-size:20px;font-weight:900;color:var(--t1)">Profile Settings</h1>
+        <p style="font-size:13px;color:var(--t3);margin-top:4px">Manage your account information and security preferences.</p>
+      </div>
+
+      <div class="profile-settings-grid fu">
+        <!-- Profile Picture -->
+        <div class="card">
+          <div class="card-bd">
+            <h2 class="profile-section-title">Profile Picture</h2>
+            <div class="profile-avatar-block">
+              <div class="profile-avatar-wrap" id="profileAvatarWrap">
+                <img id="profileAvatarImg" class="profile-avatar-img hidden" alt="Profile picture"/>
+                <div id="profileAvatarInitials" class="profile-avatar-initials"></div>
+              </div>
+              <div class="profile-avatar-actions">
+                <input type="file" id="profilePictureInput" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden"/>
+                <button type="button" class="btn btn-primary btn-sm" id="uploadAvatarBtn">Upload Photo</button>
+                <button type="button" class="btn btn-outline btn-sm" id="removeAvatarBtn">Remove</button>
+                <p class="profile-hint">JPG, JPEG, or PNG. Max 5 MB.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal Information -->
+        <div class="card">
+          <div class="card-bd">
+            <h2 class="profile-section-title">Personal Information</h2>
+            <form id="profileForm" class="profile-form">
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="profileFullName">Full Name</label>
+                <input id="profileFullName" class="mnx-input" type="text" required placeholder="Dr. Sarah Chen"/>
+              </div>
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="profileEmail">Email</label>
+                <input id="profileEmail" class="mnx-input" type="email" required placeholder="sarah.chen@medinotex.io"/>
+              </div>
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="profilePhone">Phone Number</label>
+                <input id="profilePhone" class="mnx-input" type="tel" placeholder="+1 (555) 123-4567"/>
+              </div>
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="profileSpecialty">Specialization</label>
+                <input id="profileSpecialty" class="mnx-input mnx-input-readonly" type="text" readonly tabindex="-1" aria-readonly="true" placeholder="—"/>
+                <p class="profile-hint">Managed by the system administrator.</p>
+              </div>
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="profileHospital">Hospital / Clinic Name</label>
+                <input id="profileHospital" class="mnx-input mnx-input-readonly" type="text" readonly tabindex="-1" aria-readonly="true" placeholder="—"/>
+                <p class="profile-hint">Managed by the system administrator.</p>
+              </div>
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="profileAddress">Address</label>
+                <textarea id="profileAddress" class="mnx-input" rows="3" placeholder="123 Medical Drive, Suite 100"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm" id="saveProfileBtn" style="width:fit-content;margin-top:6px">Save Changes</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="card">
+          <div class="card-bd">
+            <h2 class="profile-section-title">Change Password</h2>
+            <form id="passwordForm" class="profile-form">
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="currentPassword">Current Password</label>
+                <input id="currentPassword" class="mnx-input" type="password" autocomplete="current-password" placeholder="••••••••"/>
+              </div>
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="newPassword">New Password</label>
+                <input id="newPassword" class="mnx-input" type="password" autocomplete="new-password" placeholder="At least 8 characters"/>
+              </div>
+              <div class="profile-form-row">
+                <label class="mnx-form-label" for="confirmPassword">Confirm New Password</label>
+                <input id="confirmPassword" class="mnx-input" type="password" autocomplete="new-password" placeholder="Repeat new password"/>
+              </div>
+              <button type="submit" class="btn btn-outline btn-sm" id="changePasswordBtn" style="width:fit-content;margin-top:6px">Update Password</button>
+            </form>
+          </div>
         </div>
       </div>
     </section>

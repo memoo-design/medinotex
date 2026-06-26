@@ -23,7 +23,7 @@ def create_app(config_class=Config):
     CORS(app, supports_credentials=True)
 
     login_manager.init_app(app)
-    login_manager.login_view = "auth.login"
+    login_manager.login_view = "core.login_page"
     login_manager.session_protection = "strong"
 
     # ── Blueprints ─────────────────────────────────────────

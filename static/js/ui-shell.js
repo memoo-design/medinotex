@@ -60,16 +60,16 @@
   const NAV_CONFIG = {
     doctor: [
       { section: 'Main' },
-      { key: 'dashboard', label: 'Dashboard', href: '/#dashboard', icon: 'dashboard' },
-      { key: 'patients', label: 'Patients', href: '/#patients', icon: 'patients' },
-      { key: 'upload', label: 'Upload Clinical Note', href: '/#upload', icon: 'upload' },
-      { key: 'summaries', label: 'AI Summaries', href: '/#summaries', icon: 'summaries', badge: 'New' },
+      { key: 'dashboard', label: 'Dashboard', href: '/dashboard#dashboard', icon: 'dashboard' },
+      { key: 'patients', label: 'Patients', href: '/dashboard#patients', icon: 'patients' },
+      { key: 'upload', label: 'Upload Clinical Note', href: '/dashboard#upload', icon: 'upload' },
+      { key: 'summaries', label: 'AI Summaries', href: '/dashboard#summaries', icon: 'summaries', badge: 'New' },
       { section: 'Clinical' },
-      { key: 'appointments', label: 'Appointments', href: '/#appointments', icon: 'appointments' },
-      { key: 'history', label: 'Medical History', href: '/#history', icon: 'history' },
-      { key: 'notifications', label: 'Notifications', href: '/#notifications', icon: 'notifications' },
+      { key: 'appointments', label: 'Appointments', href: '/dashboard#appointments', icon: 'appointments' },
+      { key: 'history', label: 'Medical History', href: '/dashboard#history', icon: 'history' },
+      { key: 'notifications', label: 'Notifications', href: '/dashboard#notifications', icon: 'notifications' },
       { section: 'Account' },
-      { key: 'profile', label: 'Profile', href: '/#profile', icon: 'profile' },
+      { key: 'profile', label: 'Profile Settings', href: '/dashboard#profile', icon: 'settings' },
     ],
     coder: [
       { section: 'Main' },
@@ -110,24 +110,24 @@
       { section: 'Account' },
       { key: 'profile', label: 'Profile', href: '/#profile', icon: 'profile' },
     ],
-    patient: [
-      { section: 'Main' },
-      { key: 'dashboard', label: 'Dashboard', href: 'patient.html', icon: 'dashboard' },
-      { key: 'profile', label: 'My Profile', href: 'patient.html#profile', icon: 'profile' },
-      { key: 'records', label: 'Medical Records', href: 'patient.html#records', icon: 'records' },
-      { key: 'reports', label: 'Clinical Reports', href: 'patient.html#reports', icon: 'reports' },
-      { section: 'Care' },
-      { key: 'appointments', label: 'Appointments', href: 'patient.html#appointments', icon: 'appointments' },
-      { key: 'prescriptions', label: 'Prescriptions', href: 'patient.html#prescriptions', icon: 'rx' },
-      { key: 'notifications', label: 'Notifications', href: 'patient.html#notifications', icon: 'notifications' },
-      { section: 'Account' },
-      { key: 'settings', label: 'Settings', href: 'patient.html#settings', icon: 'settings' },
-    ],
+    // patient: [
+    //   { section: 'Main' },
+    //   { key: 'dashboard', label: 'Dashboard', href: 'patient.html', icon: 'dashboard' },
+    //   { key: 'profile', label: 'My Profile', href: 'patient.html#profile', icon: 'profile' },
+    //   { key: 'records', label: 'Medical Records', href: 'patient.html#records', icon: 'records' },
+    //   { key: 'reports', label: 'Clinical Reports', href: 'patient.html#reports', icon: 'reports' },
+    //   { section: 'Care' },
+    //   { key: 'appointments', label: 'Appointments', href: 'patient.html#appointments', icon: 'appointments' },
+    //   { key: 'prescriptions', label: 'Prescriptions', href: 'patient.html#prescriptions', icon: 'rx' },
+    //   { key: 'notifications', label: 'Notifications', href: 'patient.html#notifications', icon: 'notifications' },
+    //   { section: 'Account' },
+    //   { key: 'settings', label: 'Settings', href: 'patient.html#settings', icon: 'settings' },
+    // ],
   };
 
   const ROLE_LABEL = {
-    doctor: 'Clinical Platform', coder: 'Coder Portal', admin: 'Admin Panel',
-    super_admin: 'Super Admin', patient: 'Patient Portal',
+    doctor: 'Clinical Platform', medical_coder: 'Coder Portal', admin: 'Admin Panel',
+    super_admin: 'Super Admin',
   };
 
   function svg(key) { return ICONS[key] || ICONS.dashboard; }
@@ -151,7 +151,23 @@
     return html;
   }
 
+  function initialsFromName(name) {
+    if (!name) return '??';
+    const parts = name.replace(/^Dr\.?\s*/i, '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return (parts[0] || '??').slice(0, 2).toUpperCase();
+  }
+
+  function avatarHtml(profilePicture, displayName, sizeClass) {
+    const cls = 'mnx-avatar' + (sizeClass ? ' ' + sizeClass : '') + (profilePicture ? ' has-img' : '');
+    if (profilePicture) {
+      return '<div class="' + cls + '"><img class="mnx-avatar-img" src="' + MNX.escapeHTML(profilePicture) + '" alt=""/></div>';
+    }
+    return '<div class="' + cls + '">' + initialsFromName(displayName) + '</div>';
+  }
+
   function initials(user) {
+    if (user && user.displayName) return initialsFromName(user.displayName);
     if (!user) return '??';
     return ((user.firstName || ' ')[0] + (user.lastName || ' ')[0]).toUpperCase();
   }
@@ -159,10 +175,10 @@
   function render(opts) {
     const role = opts.role;
     const activeKey = opts.activeKey;
-    const userId = opts.userId;
     const pageTitle = opts.pageTitle || 'Dashboard';
 
-    const user = global.MockDB ? MockDB.getUser(userId) : null;
+    const displayName = opts.userName || 'Guest';
+    const profilePicture = opts.profilePicture || '';
     const roleLabel = ROLE_LABEL[role] || 'MediNotex';
 
     const sidebarMount = document.getElementById('mnxSidebarMount');
@@ -172,16 +188,16 @@
     if (sidebarMount) {
       sidebarMount.innerHTML =
         '<aside class="mnx-sidebar" id="mnxSidebar">' +
-          '<div class="mnx-logo"><a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">' +
+          '<div class="mnx-logo"><a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">' +
             '<div class="mnx-logo-icon"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg></div>' +
             '<div class="mnx-logo-text"><div class="mnx-logo-name">MediNotex</div><div class="mnx-logo-sub">' + MNX.escapeHTML(roleLabel) + '</div></div>' +
           '</a></div>' +
           '<nav class="mnx-nav">' + renderSidebar(role, activeKey) + '</nav>' +
           '<div class="mnx-sidebar-foot">' +
             '<div class="mnx-user-chip" id="mnxUserChip">' +
-              '<div class="mnx-avatar">' + initials(user) + '</div>' +
+              avatarHtml(profilePicture, displayName, '') +
               '<div style="flex:1;min-width:0">' +
-                '<div style="color:#fff;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + MNX.escapeHTML(user ? user.firstName + ' ' + user.lastName : 'Guest') + '</div>' +
+                '<div style="color:#fff;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + MNX.escapeHTML(displayName) + '</div>' +
                 '<div style="color:rgba(147,197,253,.5);font-size:10px">' + MNX.escapeHTML(roleLabel) + '</div>' +
               '</div>' +
             '</div>' +
@@ -195,7 +211,6 @@
     }
 
     if (topbarMount) {
-      const unread = global.MockDB && userId ? MockDB.getNotifications({ userId, unreadOnly: true }).length : 0;
       topbarMount.innerHTML =
         '<header class="mnx-topbar" id="mnxTopbar">' +
           '<button class="mnx-icon-btn" id="mnxSidebarToggle" type="button" aria-label="Toggle sidebar">' +
@@ -214,10 +229,9 @@
               const notifHref = notifItem ? notifItem.href : '#';
               return '<a class="mnx-icon-btn" href="' + notifHref + '" id="mnxNotifBtn" aria-label="Notifications">' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>' +
-                (unread > 0 ? '<span class="mnx-notif-dot">' + (unread > 9 ? '9+' : unread) + '</span>' : '') +
               '</a>';
             })() +
-            '<div class="mnx-avatar" style="width:34px;height:34px">' + initials(user) + '</div>' +
+            avatarHtml(profilePicture, displayName, 'mnx-topbar-avatar') +
           '</div>' +
         '</header>';
     }
@@ -280,5 +294,29 @@
     if (titleEl) titleEl.textContent = text;
   }
 
-  global.UIShell = { render, NAV_CONFIG, setActive, setTitle };
+  function updateUser(opts) {
+    const displayName = opts.userName || 'Guest';
+    const profilePicture = opts.profilePicture || '';
+
+    const chip = document.getElementById('mnxUserChip');
+    if (chip) {
+      const nameEl = chip.querySelector('div[style*="font-size:13px"]');
+      if (nameEl) nameEl.textContent = displayName;
+      const oldAvatar = chip.querySelector('.mnx-avatar');
+      if (oldAvatar) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = avatarHtml(profilePicture, displayName, '');
+        oldAvatar.replaceWith(tmp.firstChild);
+      }
+    }
+
+    const topbarAvatar = document.querySelector('#mnxTopbar .mnx-topbar-avatar');
+    if (topbarAvatar) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = avatarHtml(profilePicture, displayName, 'mnx-topbar-avatar');
+      topbarAvatar.replaceWith(tmp.firstChild);
+    }
+  }
+
+  global.UIShell = { render, NAV_CONFIG, setActive, setTitle, updateUser };
 })(window);

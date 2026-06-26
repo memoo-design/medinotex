@@ -97,6 +97,7 @@
       userId: String(currentUser.id),
       pageTitle: 'Dashboard',
       userName: currentUser.full_name,
+      profilePicture: currentUser.profile_picture || '',
     });
 
     const greeting = document.querySelector('#page-dashboard h1');
@@ -111,6 +112,7 @@
     wireNav();
     wireUploadPanel();
     wireModals();
+    wireProfileSettings();
     refreshBadgesAndCounts();
 
     routeFromHash();
@@ -129,7 +131,7 @@
       const link = e.target.closest('.mnx-nav-item[data-nav-key]');
       if (!link) return;
       const href = link.getAttribute('href') || '';
-      if (href.indexOf('doctor_dashboard.html#') === 0 || href.indexOf('/#') === 0 || href.indexOf('#') === 0) {
+      if (href.indexOf('doctor_dashboard.html#') === 0 || href.indexOf('/dashboard#') === 0 || href.indexOf('/#') === 0 || href.indexOf('#') === 0) {
         e.preventDefault();
         const key = href.split('#')[1];
         location.hash = key;
@@ -140,8 +142,41 @@
   const PAGE_TITLES = {
     dashboard: 'Dashboard', patients: 'Patients', upload: 'Upload Clinical Note',
     summaries: 'AI Summaries', revisions: 'Needs Revision', appointments: 'Appointments',
-    history: 'Medical History', notifications: 'Notifications', profile: 'My Profile',
+    history: 'Medical History', notifications: 'Notifications', profile: 'Profile Settings',
   };
+
+  function profileInitials(name) {
+    if (!name) return '??';
+    const parts = name.replace(/^Dr\.?\s*/i, '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return (parts[0] || '??').slice(0, 2).toUpperCase();
+  }
+
+  function syncShellUser() {
+    UIShell.updateUser({
+      userName: currentUser.full_name,
+      profilePicture: currentUser.profile_picture || '',
+    });
+  }
+
+  function updateProfileAvatarUI() {
+    const img = document.getElementById('profileAvatarImg');
+    const initials = document.getElementById('profileAvatarInitials');
+    const removeBtn = document.getElementById('removeAvatarBtn');
+    if (!img || !initials) return;
+    if (currentUser && currentUser.profile_picture) {
+      img.src = currentUser.profile_picture + '?t=' + Date.now();
+      img.classList.remove('hidden');
+      initials.classList.add('hidden');
+      if (removeBtn) removeBtn.disabled = false;
+    } else {
+      img.classList.add('hidden');
+      img.removeAttribute('src');
+      initials.textContent = profileInitials(currentUser ? currentUser.full_name : '');
+      initials.classList.remove('hidden');
+      if (removeBtn) removeBtn.disabled = true;
+    }
+  }
 
   function showPage(key) {
     if (!PAGE_TITLES[key]) key = 'dashboard';
@@ -787,28 +822,121 @@
   });
 
   // ----------------------------------------------------------
-  // PROFILE
+  // PROFILE SETTINGS
   // ----------------------------------------------------------
   function renderProfile() {
     if (!currentUser) return;
-    const parts = (currentUser.full_name || '').replace(/^Dr\.?\s*/i, '').split(' ');
-    setText('profileName', currentUser.full_name || '');
-    setText('profileSpecialty', currentUser.specialty || '—');
-    setText('profileEmail', currentUser.email || '');
-    setText('profileFacility', 'MediNoteX Clinical');
-    setText('profileDepartment', currentUser.specialty || '—');
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    setVal('profileFullName', currentUser.full_name);
+    setVal('profileEmail', currentUser.email);
+    setVal('profilePhone', currentUser.phone);
+    setVal('profileSpecialty', currentUser.specialty);
+    setVal('profileHospital', currentUser.hospital_clinic);
+    setVal('profileAddress', currentUser.address);
+    updateProfileAvatarUI();
   }
-  document.addEventListener('click', async (e) => {
-    if (e.target && e.target.id === 'saveProfileBtn') {
+
+  function wireProfileSettings() {
+    document.getElementById('profileForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('saveProfileBtn');
+      const restore = setButtonBusy(btn, 'Saving…');
       try {
-        const res = await MNXApi.updateProfile({ full_name: document.getElementById('profileName')?.textContent });
+        const res = await MNXApi.updateProfile({
+          full_name: document.getElementById('profileFullName')?.value.trim(),
+          email: document.getElementById('profileEmail')?.value.trim(),
+          phone: document.getElementById('profilePhone')?.value.trim(),
+          address: document.getElementById('profileAddress')?.value.trim(),
+        });
         currentUser = res.user;
+        syncShellUser();
+        const greeting = document.querySelector('#page-dashboard h1');
+        if (greeting && currentUser.full_name) {
+          const first = currentUser.full_name.replace(/^Dr\.?\s*/i, '').split(' ')[0];
+          greeting.textContent = 'Good morning, Dr. ' + first + ' 👋';
+        }
         showToast('Profile changes saved.', 'success');
       } catch (err) {
         showToast(err.message || 'Save failed', 'danger');
+      } finally {
+        restore('Save Changes');
       }
-    }
-  });
+    });
+
+    document.getElementById('passwordForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('changePasswordBtn');
+      const restore = setButtonBusy(btn, 'Updating…');
+      try {
+        await MNXApi.changePassword({
+          current_password: document.getElementById('currentPassword')?.value,
+          new_password: document.getElementById('newPassword')?.value,
+          confirm_password: document.getElementById('confirmPassword')?.value,
+        });
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+        showToast('Password updated successfully.', 'success');
+      } catch (err) {
+        showToast(err.message || 'Password update failed', 'danger');
+      } finally {
+        restore('Update Password');
+      }
+    });
+
+    document.getElementById('uploadAvatarBtn')?.addEventListener('click', () => {
+      document.getElementById('profilePictureInput')?.click();
+    });
+
+    document.getElementById('profilePictureInput')?.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!allowed.includes(file.type) && !['jpg', 'jpeg', 'png'].includes(ext)) {
+        showToast('Invalid format. Use JPG, JPEG, or PNG.', 'warning');
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image must be under 5 MB.', 'warning');
+        e.target.value = '';
+        return;
+      }
+      const btn = document.getElementById('uploadAvatarBtn');
+      const restore = setButtonBusy(btn, 'Uploading…');
+      try {
+        const fd = new FormData();
+        fd.append('profile_picture', file);
+        const res = await MNXApi.uploadProfilePicture(fd);
+        currentUser = res.user;
+        updateProfileAvatarUI();
+        syncShellUser();
+        showToast('Profile picture updated.', 'success');
+      } catch (err) {
+        showToast(err.message || 'Upload failed', 'danger');
+      } finally {
+        restore('Upload Photo');
+        e.target.value = '';
+      }
+    });
+
+    document.getElementById('removeAvatarBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('removeAvatarBtn');
+      const restore = setButtonBusy(btn, 'Removing…');
+      try {
+        const res = await MNXApi.removeProfilePicture();
+        currentUser = res.user;
+        updateProfileAvatarUI();
+        syncShellUser();
+        showToast('Profile picture removed.', 'success');
+      } catch (err) {
+        showToast(err.message || 'Remove failed', 'danger');
+      } finally {
+        restore('Remove');
+      }
+    });
+  }
 
   // ----------------------------------------------------------
   // MODALS (logout confirm, add patient)

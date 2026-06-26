@@ -12,6 +12,10 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(255), nullable=False)
     full_name     = db.Column(db.String(120), nullable=False)
     specialty     = db.Column(db.String(80),  nullable=True)
+    phone         = db.Column(db.String(30),  nullable=True)
+    hospital_clinic = db.Column(db.String(150), nullable=True)
+    address       = db.Column(db.Text,        nullable=True)
+    profile_picture = db.Column(db.String(255), nullable=True)
     role          = db.Column(db.String(20),  default="doctor")   # doctor | admin
     avatar_seed   = db.Column(db.String(40),  default="doctor")
     is_active     = db.Column(db.Boolean,     default=True)
@@ -26,13 +30,17 @@ class User(db.Model, UserMixin):
 
     def to_dict(self):
         return {
-            "id":         self.id,
-            "email":      self.email,
-            "full_name":  self.full_name,
-            "specialty":  self.specialty,
-            "role":       self.role,
-            "avatar_seed":self.avatar_seed,
-            "created_at": self.created_at.isoformat(),
+            "id":              self.id,
+            "email":           self.email,
+            "full_name":       self.full_name,
+            "specialty":       self.specialty,
+            "phone":           self.phone,
+            "hospital_clinic": self.hospital_clinic,
+            "address":         self.address,
+            "profile_picture": self.profile_picture,
+            "role":            self.role,
+            "avatar_seed":     self.avatar_seed,
+            "created_at":      self.created_at.isoformat(),
         }
 
     def __repr__(self):

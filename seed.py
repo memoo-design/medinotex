@@ -40,6 +40,9 @@ def seed():
                 password_hash = bcrypt.generate_password_hash("MediNotex@2026").decode("utf-8"),
                 full_name     = "Dr. Sarah Chen",
                 specialty     = "Cardiologist · MD",
+                phone         = "+1 (555) 234-8901",
+                hospital_clinic = "MediNoteX Clinical Center",
+                address       = "123 Medical Drive, Suite 100, San Francisco, CA 94102",
                 avatar_seed   = "doctor",
             )
             db.session.add(doctor)

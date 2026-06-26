@@ -77,6 +77,9 @@
 
     getProfile: () => request('GET', '/api/profile/'),
     updateProfile: (data) => request('PUT', '/api/profile/', data),
+    changePassword: (data) => request('POST', '/api/profile/password', data),
+    uploadProfilePicture: (formData) => request('POST', '/api/profile/avatar', formData, true),
+    removeProfilePicture: () => request('DELETE', '/api/profile/avatar'),
   };
 
   global.MNXApi = MNXApi;

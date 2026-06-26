@@ -38,6 +38,8 @@ class Config:
     # ── File Upload Limits ────────────────────────────────────────────────────
     MAX_CONTENT_LENGTH          = 16 * 1024 * 1024   # 16 MB
     ALLOWED_EXTENSIONS          = {"pdf", "docx", "txt"}
+    PROFILE_PICTURE_EXTENSIONS  = {"jpg", "jpeg", "png"}
+    PROFILE_PICTURE_FOLDER      = os.path.join("static", "uploads", "avatars")
 
     # ── CORS ──────────────────────────────────────────────────────────────────
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")

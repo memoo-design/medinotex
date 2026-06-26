@@ -6,6 +6,10 @@ from extensions import db
 TABLE_COLUMNS = {
     "users": {
         "last_login": "TIMESTAMP",
+        "phone": "VARCHAR(30)",
+        "hospital_clinic": "VARCHAR(150)",
+        "address": "TEXT",
+        "profile_picture": "VARCHAR(255)",
     },
     "ai_summaries": {
         "workflow_status":     "VARCHAR(40) DEFAULT 'doctor_review'",
