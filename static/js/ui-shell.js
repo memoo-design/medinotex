@@ -73,14 +73,14 @@
     ],
     coder: [
       { section: 'Main' },
-      { key: 'dashboard', label: 'Dashboard', href: 'medinotex_coder.html', icon: 'dashboard' },
-      { key: 'pending', label: 'Pending Reviews', href: 'medinotex_coder.html#pending', icon: 'pending' },
-      { key: 'icd', label: 'ICD Code Validation', href: 'medinotex_coder.html#icd', icon: 'icd' },
-      { key: 'cpt', label: 'CPT Code Management', href: 'medinotex_coder.html#cpt', icon: 'cpt' },
-      { key: 'ai', label: 'AI Coding Suggestions', href: 'medinotex_coder.html#ai', icon: 'ai' },
+      { key: 'dashboard', label: 'Dashboard', href: '/coder', icon: 'dashboard' },
+      { key: 'pending', label: 'Pending Reviews', href: '/coder#pending', icon: 'pending' },
+      { key: 'icd', label: 'ICD Code Validation', href: '/coder#icd', icon: 'icd' },
+      { key: 'cpt', label: 'CPT Code Management', href: '/coder#cpt', icon: 'cpt' },
+      { key: 'ai', label: 'AI Coding Suggestions', href: '/coder#ai', icon: 'ai' },
       { section: 'Billing' },
-      { key: 'claims', label: 'Claims', href: 'medinotex_coder.html#claims', icon: 'billing' },
-      { key: 'billing', label: 'Billing Reports', href: 'medinotex_coder.html#billing', icon: 'reports' },
+      { key: 'claims', label: 'Claims', href: '/coder#claims', icon: 'billing' },
+      { key: 'billing', label: 'Billing Reports', href: '/coder#billing', icon: 'reports' },
       { key: 'analytics', label: 'Analytics', href: 'analytics.html', icon: 'analytics' },
       { section: 'Account' },
       { key: 'profile', label: 'Profile', href: '/#profile', icon: 'profile' },
@@ -126,14 +126,19 @@
   };
 
   const ROLE_LABEL = {
-    doctor: 'Clinical Platform', medical_coder: 'Coder Portal', admin: 'Admin Panel',
-    super_admin: 'Super Admin',
+    doctor: 'Clinical Platform', coder: 'Coder Portal', medical_coder: 'Coder Portal',
+    admin: 'Admin Panel', super_admin: 'Super Admin',
   };
+
+  function navRole(role) {
+    if (role === 'medical_coder') return 'coder';
+    return role;
+  }
 
   function svg(key) { return ICONS[key] || ICONS.dashboard; }
 
   function renderSidebar(role, activeKey) {
-    const items = NAV_CONFIG[role] || [];
+    const items = NAV_CONFIG[navRole(role)] || [];
     let html = '';
     items.forEach((item) => {
       if (item.section) {
@@ -179,7 +184,7 @@
 
     const displayName = opts.userName || 'Guest';
     const profilePicture = opts.profilePicture || '';
-    const roleLabel = ROLE_LABEL[role] || 'MediNotex';
+    const roleLabel = ROLE_LABEL[navRole(role)] || ROLE_LABEL[role] || 'MediNotex';
 
     const sidebarMount = document.getElementById('mnxSidebarMount');
     const topbarMount = document.getElementById('mnxTopbarMount');
@@ -192,7 +197,7 @@
             '<div class="mnx-logo-icon"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg></div>' +
             '<div class="mnx-logo-text"><div class="mnx-logo-name">MediNotex</div><div class="mnx-logo-sub">' + MNX.escapeHTML(roleLabel) + '</div></div>' +
           '</a></div>' +
-          '<nav class="mnx-nav">' + renderSidebar(role, activeKey) + '</nav>' +
+          '<nav class="mnx-nav">' + renderSidebar(navRole(role), activeKey) + '</nav>' +
           '<div class="mnx-sidebar-foot">' +
             '<div class="mnx-user-chip" id="mnxUserChip">' +
               avatarHtml(profilePicture, displayName, '') +
@@ -225,7 +230,7 @@
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>' +
             '</button>' +
             (function () {
-              const notifItem = (NAV_CONFIG[role] || []).find((i) => i.key === 'notifications');
+              const notifItem = (NAV_CONFIG[navRole(role)] || []).find((i) => i.key === 'notifications');
               const notifHref = notifItem ? notifItem.href : '#';
               return '<a class="mnx-icon-btn" href="' + notifHref + '" id="mnxNotifBtn" aria-label="Notifications">' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>' +

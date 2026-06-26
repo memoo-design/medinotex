@@ -1222,7 +1222,7 @@ async function renderPending() {
   const container = document.getElementById('pendingList');
   container.innerHTML = `<div style="text-align:center;padding:32px"><span class="spinner"></span><div style="color:var(--text3);font-size:13px;margin-top:10px">Loading pending reviews…</div></div>`;
   try {
-    const res = await fetch('/api/coder/pending-reviews');
+    const res = await fetch('/api/coder/pending-reviews', { credentials: 'include' });
     const data = res.ok ? await res.json() : null;
     const list = data?.reviews ?? pendingData; // fallback to mock
     _renderPendingList(list);
@@ -1241,12 +1241,15 @@ function _renderPendingList(list) {
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
             <span class="td-main">${d.id}</span>
-            <span class="badge ${prioMap[d.prio]}">${d.prio}</span>
+            <span class="badge ${prioMap[d.prio] || 'badge-yellow'}">${d.prio}</span>
             <span class="badge badge-blue">${d.type}</span>
+            ${d.has_ai_summary === false ? '<span class="badge badge-yellow">No AI summary available. Reviewing original clinical note.</span>' : ''}
           </div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:8px">
             Patient: <strong style="color:var(--text)">${d.pt}</strong>
           </div>
+          ${d.has_ai_summary === false && d.original_text ? `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border);max-height:120px;overflow:auto;line-height:1.5">${d.original_text.replace(/</g,'&lt;')}</div>` : ''}
+          ${d.has_ai_summary !== false && d.assessment ? `<div style="font-size:12px;color:var(--text2);margin-bottom:8px"><strong>Assessment:</strong> ${String(d.assessment).replace(/</g,'&lt;').slice(0,200)}</div>` : ''}
           <!-- Inline code edit chips -->
           <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase">AI Codes:</span>
@@ -1288,7 +1291,7 @@ async function approvePending(id, btn) {
   btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span>';
   try {
     await fetch(`/api/coder/reviews/${id}/approve`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include',
       body: JSON.stringify({ override_codes: overrideCodes })
     });
   } catch(e) {}
@@ -1303,7 +1306,7 @@ async function draftPending(id, btn) {
   btn.disabled = true;
   try {
     await fetch(`/api/coder/reviews/${id}/draft`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include',
       body: JSON.stringify({ draft_codes: notes })
     });
   } catch(e) {}
@@ -1316,7 +1319,7 @@ async function renderAISuggestions() {
   const container = document.getElementById('aiSuggestions');
   container.innerHTML = `<div style="text-align:center;padding:32px"><span class="spinner"></span><div style="color:var(--text3);font-size:13px;margin-top:10px">Fetching AI suggestions from server…</div></div>`;
   try {
-    const res = await fetch('/api/coder/ai-suggestions');
+    const res = await fetch('/api/coder/ai-suggestions', { credentials: 'include' });
     const data = res.ok ? await res.json() : null;
     const list = data?.suggestions ?? aiSuggestData;
     _renderAISuggestions(list);

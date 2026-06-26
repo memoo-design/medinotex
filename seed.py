@@ -51,6 +51,27 @@ def seed():
         else:
             print(f"Doctor already exists: {doctor.email}")
 
+        # Create medical coder if doesn't exist
+        coder = User.query.filter_by(email="sarah.mitchell@medinotex.io").first()
+        if not coder:
+            coder = User(
+                email         = "sarah.mitchell@medinotex.io",
+                password_hash = bcrypt.generate_password_hash("MediNotex@2026").decode("utf-8"),
+                full_name     = "Sarah Mitchell",
+                specialty     = "Certified Professional Coder (CPC)",
+                phone         = "+1 (555) 456-7890",
+                hospital_clinic = "MediNoteX Clinical Center",
+                role          = "medical_coder",
+                avatar_seed   = "coder",
+            )
+            db.session.add(coder)
+            db.session.flush()
+            print(f"Medical coder created: {coder.email}  (password: MediNotex@2026)")
+        else:
+            if coder.role not in ("medical_coder", "coder"):
+                coder.role = "medical_coder"
+            print(f"Medical coder already exists: {coder.email}")
+
         # Seed patients
         now = datetime.now(timezone.utc)
         for i, p in enumerate(SAMPLE_PATIENTS):

@@ -46,8 +46,11 @@ class ClinicalNote(db.Model):
     # Relationship to summary
     summary        = db.relationship("AISummary", backref="note", uselist=False)
 
-    def to_dict(self):
-        return {
+    def note_text(self) -> str:
+        return (self.ocr_text or self.raw_text or "").strip()
+
+    def to_dict(self, include_text=False):
+        data = {
             "id":          self.id,
             "patient_id":  self.patient_id,
             "visit_type":  self.visit_type,
@@ -55,8 +58,13 @@ class ClinicalNote(db.Model):
             "file_name":   self.file_name,
             "blob_url":    self.blob_url,
             "processed":   self.processed,
+            "has_text":    bool(self.note_text()),
             "created_at":  self.created_at.isoformat(),
         }
+        if include_text:
+            data["raw_text"] = self.raw_text
+            data["ocr_text"] = self.ocr_text
+        return data
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -116,6 +124,12 @@ class AISummary(db.Model):
             "created_at":  self.created_at.isoformat(),
             "updated_at":  self.updated_at.isoformat() if self.updated_at else None,
         }
+        data["has_ai_summary"] = bool(
+            (self.subjective or "").strip()
+            or (self.objective or "").strip()
+            or (self.assessment or "").strip()
+            or (self.plan or "").strip()
+        )
         if include_history:
             data["history"] = [h.to_dict() for h in self.history_events.all()]
         return data

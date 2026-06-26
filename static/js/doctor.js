@@ -74,7 +74,8 @@
     { key: 'submit', label: 'Submitted to Coder' },
   ];
   let stepIndex = 0;            // 0-based index into STEPS
-  let activeCaseId = null;      // case being built/edited in the stepper
+  let activeCaseId = null;      // summary id when AI summary exists
+  let activeNoteId = null;      // clinical note id for fallback submit
   let pendingUploadFile = null; // File object if drag/drop or browse was used
   let soapDirty = false;
 
@@ -396,12 +397,73 @@
   function resetStepper() {
     stepIndex = 0;
     activeCaseId = null;
+    activeNoteId = null;
     pendingUploadFile = null;
     soapDirty = false;
     document.getElementById('clinical-note-text').value = '';
     document.getElementById('char-count').textContent = '0 characters';
     document.getElementById('file-preview')?.classList.add('hidden');
+    setReviewMode({ hasAi: true, noteText: '' });
+    updateSubmitButtonState('');
     renderStepper();
+  }
+
+  function setReviewMode(opts) {
+    const hasAi = opts.hasAi !== false;
+    const noteText = opts.noteText || '';
+    const patientLabel = opts.patientName || '';
+
+    document.getElementById('aiUnavailableBanner')?.classList.toggle('hidden', hasAi);
+    document.getElementById('soapFieldsWrap')?.classList.toggle('hidden', !hasAi);
+    document.getElementById('originalNoteReview')?.classList.toggle('hidden', hasAi);
+    document.getElementById('reviewConfidenceWrap')?.classList.toggle('hidden', !hasAi);
+    document.getElementById('saveSoapBtn')?.classList.toggle('hidden', !hasAi);
+
+    const origEl = document.getElementById('reviewOriginalText');
+    if (origEl) origEl.value = noteText;
+
+    if (patientLabel && document.getElementById('reviewPatientName')) {
+      document.getElementById('reviewPatientName').textContent = patientLabel;
+    }
+  }
+
+  function updateSubmitButtonState(noteText) {
+    const text = noteText === 'available' ? 'ok' : (noteText || '').trim();
+    const btn = document.getElementById('submitToCoderBtn');
+    const errEl = document.getElementById('noTextSubmitError');
+    const hasText = noteText === 'available' || text.length > 0;
+    const canSubmit = hasText && (activeCaseId || activeNoteId);
+    if (btn) btn.disabled = !canSubmit;
+    if (errEl) errEl.classList.toggle('hidden', canSubmit || !activeNoteId);
+  }
+
+  async function showAiUnavailableReview(noteId) {
+    activeNoteId = noteId;
+    activeCaseId = null;
+
+    let noteDetail;
+    try {
+      noteDetail = await MNXApi.getNote(noteId);
+    } catch (e) {
+      showToast('Could not load note details.', 'danger');
+      stepIndex = 0;
+      renderStepper();
+      return;
+    }
+
+    const text = (noteDetail.ocr_text || noteDetail.raw_text || '').trim();
+    const patientLabel = noteDetail.patient_name || patientName(document.getElementById('uploadPatientSelect')?.value);
+
+    stepIndex = 3;
+    renderStepper();
+    setReviewMode({ hasAi: false, noteText: text, patientName: patientLabel });
+    updateSubmitButtonState(text);
+
+    if (text) {
+      showToast('AI summarization is currently unavailable. You can still submit the original uploaded note to the medical coder.', 'warning');
+    } else {
+      showToast('No clinical note text is available to submit.', 'danger');
+    }
   }
 
   function wireUploadPanel() {
@@ -510,10 +572,17 @@
         noteId = uploadRes.note.id;
       }
 
-      await runAiStep(noteId);
+      activeNoteId = noteId;
+      try {
+        await runAiStep(noteId);
+      } catch (aiErr) {
+        await showAiUnavailableReview(noteId);
+      }
     } catch (err) {
       showToast(err.message || 'Upload failed', 'danger');
       stepIndex = 0;
+      activeNoteId = null;
+      activeCaseId = null;
       renderStepper();
     } finally {
       restore();
@@ -547,12 +616,14 @@
     const res = await MNXApi.generateSummary(noteId);
     const newCase = summaryToCase(res.summary);
     activeCaseId = newCase.id;
+    activeNoteId = noteId;
     await refreshData();
 
     showToast('AI summary generated (' + (newCase.aiConfidence || '—') + '% confidence).', 'success');
     stepIndex = 3;
     renderStepper();
     loadCaseIntoReview(newCase.id);
+    updateSubmitButtonState('available');
   }
 
   /** Lightweight client-side templating — NOT a real AI call (frontend-only by design). */
@@ -572,14 +643,15 @@
   function loadCaseIntoReview(caseId) {
     const c = myCases().find((x) => x.id === String(caseId));
     if (!c) return;
-    document.getElementById('reviewPatientName').textContent = patientName(c.patientId);
-    document.getElementById('reviewConfidence').textContent = c.aiConfidence + '%';
+    setReviewMode({ hasAi: true, patientName: patientName(c.patientId) });
+    document.getElementById('reviewConfidence').textContent = (c.aiConfidence || '—') + '%';
     document.querySelector('[data-soap-field="subjective"]').value = c.soap.subjective || '';
     document.querySelector('[data-soap-field="objective"]').value = c.soap.objective || '';
     document.querySelector('[data-soap-field="assessment"]').value = c.soap.assessment || '';
     document.querySelector('[data-soap-field="plan"]').value = c.soap.plan || '';
     soapDirty = false;
     document.getElementById('unsavedIndicator')?.classList.add('hidden');
+    updateSubmitButtonState('available');
   }
 
   async function handleSaveSoap() {
@@ -605,14 +677,23 @@
   }
 
   async function handleSubmitToCoder() {
-    if (!activeCaseId) return;
-    if (soapDirty) { await handleSaveSoap(); }
+    if (!activeCaseId && !activeNoteId) {
+      showToast('No clinical note text is available to submit.', 'warning');
+      return;
+    }
+    if (soapDirty && activeCaseId) { await handleSaveSoap(); }
     const btn = document.getElementById('submitToCoderBtn');
     const restore = setButtonBusy(btn, 'Submitting…');
     try {
-      await MNXApi.submitToCoder(activeCaseId);
+      if (activeCaseId) {
+        await MNXApi.submitToCoder(activeCaseId);
+      } else {
+        await MNXApi.submitNoteToCoder(activeNoteId);
+      }
       await refreshData();
       stepIndex = 4;
+      activeCaseId = null;
+      activeNoteId = null;
       renderStepper();
       showToast('Case submitted to the medical coder.', 'success', 'Submitted');
       renderDashboard();

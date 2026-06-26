@@ -216,13 +216,25 @@
               <span style="font-size:14px;font-weight:700;color:var(--t1)" id="reviewPatientName"></span>
               <span id="unsavedIndicator" class="hidden" style="margin-left:10px;font-size:11.5px;color:var(--warning)"><span class="unsaved-dot"></span> Unsaved changes</span>
             </div>
-            <span class="bdg bdg-processing">AI Confidence: <span id="reviewConfidence">—</span></span>
+            <span class="bdg bdg-processing" id="reviewConfidenceWrap">AI Confidence: <span id="reviewConfidence">—</span></span>
           </div>
           <div class="card-bd" style="display:flex;flex-direction:column;gap:14px">
-            <div><label class="mnx-form-label">Subjective</label><textarea class="mnx-input" rows="3" data-soap-field="subjective"></textarea></div>
-            <div><label class="mnx-form-label">Objective</label><textarea class="mnx-input" rows="3" data-soap-field="objective"></textarea></div>
-            <div><label class="mnx-form-label">Assessment</label><textarea class="mnx-input" rows="2" data-soap-field="assessment"></textarea></div>
-            <div><label class="mnx-form-label">Plan</label><textarea class="mnx-input" rows="3" data-soap-field="plan"></textarea></div>
+            <div id="aiUnavailableBanner" class="hidden" style="padding:12px 14px;background:rgba(245,158,11,.1);border:1px solid var(--warning);border-radius:10px;font-size:12.5px;color:var(--t2);line-height:1.5">
+              AI summarization is currently unavailable. You can still submit the original uploaded note to the medical coder.
+            </div>
+            <div id="noTextSubmitError" class="hidden" style="padding:12px 14px;background:rgba(239,68,68,.08);border:1px solid var(--danger);border-radius:10px;font-size:12.5px;color:var(--danger);line-height:1.5">
+              No clinical note text is available to submit.
+            </div>
+            <div id="soapFieldsWrap">
+              <div><label class="mnx-form-label">Subjective</label><textarea class="mnx-input" rows="3" data-soap-field="subjective"></textarea></div>
+              <div><label class="mnx-form-label">Objective</label><textarea class="mnx-input" rows="3" data-soap-field="objective"></textarea></div>
+              <div><label class="mnx-form-label">Assessment</label><textarea class="mnx-input" rows="2" data-soap-field="assessment"></textarea></div>
+              <div><label class="mnx-form-label">Plan</label><textarea class="mnx-input" rows="3" data-soap-field="plan"></textarea></div>
+            </div>
+            <div id="originalNoteReview" class="hidden">
+              <label class="mnx-form-label" for="reviewOriginalText">Original Clinical Note</label>
+              <textarea id="reviewOriginalText" class="mnx-input mnx-input-readonly" rows="8" readonly tabindex="-1"></textarea>
+            </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;border-top:1px solid var(--border);padding-top:14px">
               <button id="saveSoapBtn" class="btn btn-outline" type="button">Save Changes</button>
               <button id="submitToCoderBtn" class="btn btn-primary" type="button">Looks good — Submit to Coder →</button>

@@ -197,7 +197,12 @@ def upload_text():
 @login_required
 def get_note(note_id):
     note = _get_own_note(note_id)
-    data = note.to_dict()
+    data = note.to_dict(include_text=True)
+    data["patient_name"] = note.patient.name if note.patient else None
+    data["has_summary"] = note.summary is not None
+    if note.summary:
+        data["summary_id"] = note.summary.id
+        data["workflow_status"] = note.summary.workflow_status
     # Generate short-lived SAS URL for secure download
     if note.blob_name:
         try:

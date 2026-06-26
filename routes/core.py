@@ -21,6 +21,11 @@ def doctor_dashboard():
     return render_template("doctor_dashboard.html")
 
 
+@core_bp.route("/coder")
+def coder_dashboard():
+    return render_template("medinotex_coder.html")
+
+
 @core_bp.route("/login")
 def login_page():
     if current_user.is_authenticated:

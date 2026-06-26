@@ -57,6 +57,7 @@
     },
     uploadFile: (formData) => request('POST', '/api/upload/file', formData, true),
     uploadText: (data) => request('POST', '/api/upload/text', data),
+    getNote: (id) => request('GET', '/api/upload/' + id),
 
     generateSummary: (noteId) => request('POST', '/api/summaries/generate', { note_id: noteId }),
     listSummaries: (params) => {
@@ -66,6 +67,7 @@
     getSummary: (id) => request('GET', '/api/summaries/' + id),
     updateSummary: (id, soap) => request('PUT', '/api/summaries/' + id, soap),
     submitToCoder: (id) => request('POST', '/api/summaries/' + id + '/submit'),
+    submitNoteToCoder: (noteId) => request('POST', '/api/doctor/notes/' + noteId + '/submit-to-coder'),
     listRevisions: () => request('GET', '/api/summaries/revisions'),
 
     listAppointments: () => request('GET', '/api/appointments/'),

@@ -16,7 +16,7 @@ class User(db.Model, UserMixin):
     hospital_clinic = db.Column(db.String(150), nullable=True)
     address       = db.Column(db.Text,        nullable=True)
     profile_picture = db.Column(db.String(255), nullable=True)
-    role          = db.Column(db.String(20),  default="doctor")   # doctor | admin
+    role          = db.Column(db.String(20),  default="doctor")   # admin | doctor | medical_coder
     avatar_seed   = db.Column(db.String(40),  default="doctor")
     is_active     = db.Column(db.Boolean,     default=True)
     created_at    = db.Column(db.DateTime,    default=datetime.utcnow)
