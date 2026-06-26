@@ -82,6 +82,13 @@
     changePassword: (data) => request('POST', '/api/profile/password', data),
     uploadProfilePicture: (formData) => request('POST', '/api/profile/avatar', formData, true),
     removeProfilePicture: () => request('DELETE', '/api/profile/avatar'),
+
+    // Medical coder workflow
+    getCoderQueue: () => request('GET', '/api/coder/queue'),
+    getCoderNote: (noteId) => request('GET', '/api/coder/notes/' + noteId),
+    getCoderSuggestions: (noteId) => request('GET', '/api/coder/notes/' + noteId + '/suggestions'),
+    approveCoderNote: (noteId, data) => request('POST', '/api/coder/notes/' + noteId + '/approve', data),
+    getCoderPendingReviews: () => request('GET', '/api/coder/pending-reviews'),
   };
 
   global.MNXApi = MNXApi;

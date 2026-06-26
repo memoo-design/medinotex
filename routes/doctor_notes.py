@@ -15,6 +15,7 @@ from models.clinical import (
     WORKFLOW_DOCTOR_REVIEW,
     WORKFLOW_SUBMITTED_TO_CODER,
     WORKFLOW_RETURNED_FOR_CORRECTION,
+    NOTE_STATUS_SUBMITTED,
 )
 from models.patient import Patient
 from services.audit import log_audit
@@ -64,6 +65,7 @@ def submit_note_to_coder(note_id):
         summary.add_history("Submitted to medical coder")
 
     note.processed = True
+    note.status = NOTE_STATUS_SUBMITTED
 
     patient = Patient.query.get(note.patient_id)
     if patient:

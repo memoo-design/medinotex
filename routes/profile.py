@@ -23,6 +23,10 @@ def _is_admin():
     return getattr(current_user, "role", None) == "admin"
 
 
+def _is_coder():
+    return getattr(current_user, "role", None) in ("medical_coder", "coder")
+
+
 
 
 def _allowed_image(filename):
@@ -67,6 +71,8 @@ def update_profile():
         current_user.full_name = name
 
     if "email" in data:
+        if _is_coder():
+            return jsonify({"error": "Email cannot be changed from the coder profile"}), 403
         email = (data["email"] or "").strip().lower()
         if not email:
             return jsonify({"error": "Email cannot be empty"}), 400
@@ -82,6 +88,21 @@ def update_profile():
         if not _is_admin():
             return jsonify({"error": "Specialization can only be changed by an administrator"}), 403
         current_user.specialty = (data["specialty"] or "").strip() or None
+
+    if "department" in data:
+        if not _is_admin():
+            return jsonify({"error": "Department can only be changed by an administrator"}), 403
+        current_user.department = (data["department"] or "").strip() or None
+
+    if "employee_id" in data:
+        if not _is_admin():
+            return jsonify({"error": "Employee ID can only be changed by an administrator"}), 403
+        current_user.employee_id = (data["employee_id"] or "").strip() or None
+
+    if "role" in data:
+        if not _is_admin():
+            return jsonify({"error": "Role can only be changed by an administrator"}), 403
+        current_user.role = (data["role"] or "").strip() or current_user.role
 
     if "phone" in data:
         phone = (data["phone"] or "").strip()

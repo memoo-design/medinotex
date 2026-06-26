@@ -63,6 +63,8 @@ def seed():
                 hospital_clinic = "MediNoteX Clinical Center",
                 role          = "medical_coder",
                 avatar_seed   = "coder",
+                employee_id   = "CPC-2847291",
+                department    = "Health Information Management",
             )
             db.session.add(coder)
             db.session.flush()

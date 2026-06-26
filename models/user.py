@@ -14,6 +14,8 @@ class User(db.Model, UserMixin):
     specialty     = db.Column(db.String(80),  nullable=True)
     phone         = db.Column(db.String(30),  nullable=True)
     hospital_clinic = db.Column(db.String(150), nullable=True)
+    department      = db.Column(db.String(100), nullable=True)
+    employee_id     = db.Column(db.String(50),  nullable=True)
     address       = db.Column(db.Text,        nullable=True)
     profile_picture = db.Column(db.String(255), nullable=True)
     role          = db.Column(db.String(20),  default="doctor")   # admin | doctor | medical_coder
@@ -36,6 +38,8 @@ class User(db.Model, UserMixin):
             "specialty":       self.specialty,
             "phone":           self.phone,
             "hospital_clinic": self.hospital_clinic,
+            "department":      self.department,
+            "employee_id":     self.employee_id,
             "address":         self.address,
             "profile_picture": self.profile_picture,
             "role":            self.role,

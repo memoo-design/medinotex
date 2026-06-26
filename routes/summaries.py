@@ -19,6 +19,7 @@ from models.clinical import (
     ClinicalNote, AISummary, Notification,
     WORKFLOW_DOCTOR_REVIEW, WORKFLOW_SUBMITTED_TO_CODER,
     WORKFLOW_RETURNED_FOR_CORRECTION,
+    NOTE_STATUS_SUBMITTED,
 )
 from models.patient import Patient
 from services.ai_language import generate_soap_summary
@@ -216,6 +217,10 @@ def submit_to_coder(summary_id):
     s.workflow_status = WORKFLOW_SUBMITTED_TO_CODER
     s.submitted_at    = datetime.utcnow()
     s.add_history("Submitted to medical coder")
+
+    if s.note:
+        s.note.status = NOTE_STATUS_SUBMITTED
+        s.note.processed = True
 
     patient = Patient.query.get(s.patient_id)
     if patient:

@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/static/css/pages/coder.css"/>
 <style>
   /* ===== CSS VARIABLES ===== */
   :root {
@@ -469,6 +470,11 @@
       <div id="pendingList" style="display:flex;flex-direction:column;gap:12px"></div>
     </div>
 
+    <!-- ===== CODING REVIEW PAGE (workflow extension) ===== -->
+    <div class="page-section" id="page-review">
+      <div id="reviewPanelRoot"></div>
+    </div>
+
     <!-- ===== ICD VALIDATION PAGE ===== -->
     <div class="page-section" id="page-icd">
       <div class="section-hdr" style="margin-bottom:20px">
@@ -754,50 +760,62 @@
     <!-- ===== PROFILE PAGE ===== -->
     <div class="page-section" id="page-profile">
       <div style="max-width:700px;margin:0 auto">
-        <!-- Profile Header -->
         <div class="card card-p" style="margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-          <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;flex-shrink:0">SM</div>
+          <div id="coderProfileAvatar" style="width:80px;height:80px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden">—</div>
           <div style="flex:1">
-            <div style="font-size:20px;font-weight:800;color:var(--text)">Sarah Mitchell, CPC</div>
-            <div style="font-size:13px;color:var(--text2)">Senior Medical Coder · MediNotex Health System</div>
-            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-              <span class="badge badge-blue">Certified CPC</span>
-              <span class="badge badge-green">ICD-10 Specialist</span>
-              <span class="badge badge-purple">CPT Expert</span>
-            </div>
+            <div id="coderProfileName" style="font-size:20px;font-weight:800;color:var(--text)">Medical Coder</div>
+            <div style="font-size:13px;color:var(--text2)">MediNoteX Clinical Center</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="showToast('Profile updated successfully','success')">Save Changes</button>
+          <button class="btn btn-primary btn-sm" onclick="CoderWorkflow.saveProfile()">Save Changes</button>
         </div>
 
-        <!-- Profile Form -->
         <div class="card card-p" style="margin-bottom:20px">
           <div class="section-title" style="margin-bottom:16px">Personal Information</div>
           <div class="grid-2" style="gap:14px">
-            <div><label class="form-label">First Name</label><input class="form-input" value="Sarah"/></div>
-            <div><label class="form-label">Last Name</label><input class="form-input" value="Mitchell"/></div>
-            <div><label class="form-label">Email</label><input class="form-input" value="sarah.mitchell@medinotex.com" type="email"/></div>
-            <div><label class="form-label">Phone</label><input class="form-input" value="+1 (555) 847-2931"/></div>
-            <div><label class="form-label">Certification ID</label><input class="form-input" value="CPC-2847291"/></div>
-            <div><label class="form-label">Specialty</label><select class="form-input"><option>Internal Medicine</option><option>Surgery</option><option>Cardiology</option></select></div>
+            <div><label class="form-label">First Name</label><input class="form-input" id="coderFirstName"/></div>
+            <div><label class="form-label">Last Name</label><input class="form-input" id="coderLastName"/></div>
+            <div><label class="form-label">Phone</label><input class="form-input" id="coderPhone"/></div>
           </div>
         </div>
 
-        <!-- Stats -->
+        <div class="card card-p" style="margin-bottom:20px">
+          <div class="section-title" style="margin-bottom:16px">Organization (Read-only)</div>
+          <div class="grid-2" style="gap:14px">
+            <div>
+              <label class="form-label">Coder ID / Employee ID</label>
+              <input class="form-input mnx-input-readonly" id="coderEmployeeId" readonly/>
+              <div class="mnx-field-hint">Managed by the system administrator.</div>
+            </div>
+            <div>
+              <label class="form-label">Specialization</label>
+              <input class="form-input mnx-input-readonly" id="coderSpecialty" readonly/>
+              <div class="mnx-field-hint">Managed by the system administrator.</div>
+            </div>
+            <div>
+              <label class="form-label">Hospital / Clinic</label>
+              <input class="form-input mnx-input-readonly" id="coderHospital" readonly/>
+              <div class="mnx-field-hint">Managed by the system administrator.</div>
+            </div>
+            <div>
+              <label class="form-label">Department</label>
+              <input class="form-input mnx-input-readonly" id="coderDepartment" readonly/>
+              <div class="mnx-field-hint">Managed by the system administrator.</div>
+            </div>
+            <div>
+              <label class="form-label">Role</label>
+              <input class="form-input mnx-input-readonly" id="coderRole" readonly/>
+              <div class="mnx-field-hint">Managed by the system administrator.</div>
+            </div>
+          </div>
+        </div>
+
         <div class="card card-p">
-          <div class="section-title" style="margin-bottom:16px">Performance Stats</div>
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600;color:var(--text)">Coding Accuracy</span><span style="font-size:13px;font-weight:700;color:var(--success)">97.4%</span></div>
-              <div class="prog-bar"><div class="prog-fill" style="width:97.4%;background:var(--success)"></div></div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600;color:var(--text)">AI Suggestion Adoption</span><span style="font-size:13px;font-weight:700;color:var(--primary)">89.3%</span></div>
-              <div class="prog-bar"><div class="prog-fill" style="width:89.3%;background:var(--primary)"></div></div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600;color:var(--text)">Review Completion Rate</span><span style="font-size:13px;font-weight:700;color:var(--accent)">94%</span></div>
-              <div class="prog-bar"><div class="prog-fill" style="width:94%;background:var(--accent)"></div></div>
-            </div>
+          <div class="section-title" style="margin-bottom:16px">Change Password</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div><label class="form-label">Current Password</label><input class="form-input" id="coderCurrentPw" type="password"/></div>
+            <div><label class="form-label">New Password</label><input class="form-input" id="coderNewPw" type="password"/></div>
+            <div><label class="form-label">Confirm New Password</label><input class="form-input" id="coderConfirmPw" type="password"/></div>
+            <button class="btn btn-ghost btn-sm" style="align-self:flex-start" onclick="CoderWorkflow.changePassword()">Update Password</button>
           </div>
         </div>
       </div>
@@ -948,6 +966,8 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- ===== JAVASCRIPT ===== -->
+<script src="/static/js/api.js"></script>
+<script src="/static/js/coder.js"></script>
 <script>
 /* =============================================
    MEDINOTEX – MEDICAL CODER DASHBOARD JS
@@ -1556,9 +1576,6 @@ window.addEventListener('DOMContentLoaded', () => {
   renderLeaderboard();
   renderRecentValidations();
   setTimeout(initCharts, 100);
-
-  // Welcome toast
-  setTimeout(() => showToast('Welcome back, Sarah! 14 pending reviews.', 'info'), 800);
 });
 
 // Responsive sidebar

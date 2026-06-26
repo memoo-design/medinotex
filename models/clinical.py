@@ -7,8 +7,19 @@ WORKFLOW_AI_DONE = "ai_done"
 WORKFLOW_DOCTOR_REVIEW = "doctor_review"
 WORKFLOW_SUBMITTED_TO_CODER = "submitted_to_coder"
 WORKFLOW_CODER_REVIEW = "coder_review"
+WORKFLOW_PENDING_REVIEW = "pending_review"
+WORKFLOW_CODED = "coded"
+WORKFLOW_APPROVED = "approved"
 WORKFLOW_RETURNED_FOR_CORRECTION = "returned_for_correction"
 WORKFLOW_RELEASED_TO_PATIENT = "released_to_patient"
+
+# Clinical note lifecycle (parallel to summary workflow)
+NOTE_STATUS_DRAFT = "draft"
+NOTE_STATUS_UPLOADED = "uploaded"
+NOTE_STATUS_SUBMITTED = "submitted_to_coder"
+NOTE_STATUS_PENDING = "pending_review"
+NOTE_STATUS_CODED = "coded"
+NOTE_STATUS_APPROVED = "approved"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -41,10 +52,14 @@ class ClinicalNote(db.Model):
     model_choice   = db.Column(db.String(30),  default="MediAI Pro")
 
     processed      = db.Column(db.Boolean,     default=False)
+    status         = db.Column(db.String(30),  default=NOTE_STATUS_UPLOADED, index=True)
     created_at     = db.Column(db.DateTime,    default=datetime.utcnow)
 
     # Relationship to summary
     summary        = db.relationship("AISummary", backref="note", uselist=False)
+    code_suggestion = db.relationship("CodeSuggestion", backref="note", uselist=False)
+    coder_reviews  = db.relationship("CoderReview", backref="note", lazy="dynamic")
+    doctor         = db.relationship("User", foreign_keys=[doctor_id])
 
     def note_text(self) -> str:
         return (self.ocr_text or self.raw_text or "").strip()
@@ -58,6 +73,7 @@ class ClinicalNote(db.Model):
             "file_name":   self.file_name,
             "blob_url":    self.blob_url,
             "processed":   self.processed,
+            "status":      self.status,
             "has_text":    bool(self.note_text()),
             "created_at":  self.created_at.isoformat(),
         }
@@ -212,6 +228,64 @@ class CaseHistory(db.Model):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+class CodeSuggestion(db.Model):
+    """Persisted ICD/CPT suggestions for a clinical note."""
+    __tablename__ = "code_suggestions"
+
+    id                = db.Column(db.Integer, primary_key=True)
+    note_id           = db.Column(db.Integer, db.ForeignKey("clinical_notes.id"), nullable=False, unique=True, index=True)
+    icd_codes         = db.Column(db.Text, nullable=True)   # JSON list
+    cpt_codes         = db.Column(db.Text, nullable=True)   # JSON list
+    confidence        = db.Column(db.Float, nullable=True)
+    method_used       = db.Column(db.String(40), default="rule_based")
+    highlighted_terms = db.Column(db.Text, nullable=True)   # JSON list
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        import json
+        return {
+            "id": self.id,
+            "note_id": self.note_id,
+            "icd_codes": json.loads(self.icd_codes) if self.icd_codes else [],
+            "cpt_codes": json.loads(self.cpt_codes) if self.cpt_codes else [],
+            "confidence": self.confidence,
+            "method_used": self.method_used,
+            "highlighted_terms": json.loads(self.highlighted_terms) if self.highlighted_terms else [],
+            "created_at": self.created_at.isoformat(),
+        }
+
+
+class CoderReview(db.Model):
+    """Final coder approval record for a clinical note."""
+    __tablename__ = "coder_reviews"
+
+    id              = db.Column(db.Integer, primary_key=True)
+    note_id         = db.Column(db.Integer, db.ForeignKey("clinical_notes.id"), nullable=False, index=True)
+    coder_id        = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    final_icd_codes = db.Column(db.Text, nullable=True)   # JSON list
+    final_cpt_codes = db.Column(db.Text, nullable=True)   # JSON list
+    comments        = db.Column(db.Text, nullable=True)
+    approved        = db.Column(db.Boolean, default=False)
+    approved_at     = db.Column(db.DateTime, nullable=True)
+    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+
+    coder = db.relationship("User", backref="coder_reviews")
+
+    def to_dict(self):
+        import json
+        return {
+            "id": self.id,
+            "note_id": self.note_id,
+            "coder_id": self.coder_id,
+            "final_icd_codes": json.loads(self.final_icd_codes) if self.final_icd_codes else [],
+            "final_cpt_codes": json.loads(self.final_cpt_codes) if self.final_cpt_codes else [],
+            "comments": self.comments,
+            "approved": self.approved,
+            "approved_at": self.approved_at.isoformat() if self.approved_at else None,
+            "created_at": self.created_at.isoformat(),
+        }
+
+
 class AuditLog(db.Model):
     """Immutable audit trail for doctor actions."""
     __tablename__ = "audit_logs"

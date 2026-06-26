@@ -8,8 +8,13 @@ TABLE_COLUMNS = {
         "last_login": "TIMESTAMP",
         "phone": "VARCHAR(30)",
         "hospital_clinic": "VARCHAR(150)",
+        "department": "VARCHAR(100)",
+        "employee_id": "VARCHAR(50)",
         "address": "TEXT",
         "profile_picture": "VARCHAR(255)",
+    },
+    "clinical_notes": {
+        "status": "VARCHAR(30) DEFAULT 'uploaded'",
     },
     "ai_summaries": {
         "workflow_status":     "VARCHAR(40) DEFAULT 'doctor_review'",
