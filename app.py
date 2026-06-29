@@ -40,6 +40,7 @@ def create_app(config_class=Config):
     from routes.audit import audit_bp
     from routes.doctor_notes import doctor_notes_bp
     from routes.coder import coder_bp
+    from routes.coding import coding_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(patients_bp, url_prefix="/api/patients")
@@ -54,6 +55,7 @@ def create_app(config_class=Config):
     app.register_blueprint(core_bp)   # 👈 no prefix, handles "/"
     app.register_blueprint(doctor_notes_bp, url_prefix="/api/doctor")
     app.register_blueprint(coder_bp, url_prefix="/api/coder")
+    app.register_blueprint(coding_bp, url_prefix="/api/coding")
 
     return app
 

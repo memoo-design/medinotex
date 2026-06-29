@@ -1,0 +1,32 @@
+{
+  "dataset": "medinotex_synthetic_icd100_cpt50_20000_v2_reduced_repetition.csv",
+  "n_train": 16000,
+  "n_test": 4000,
+  "n_icd_classes": 100,
+  "n_cpt_classes": 50,
+  "tfidf_params": {
+    "max_features": 10000,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "min_df": 2,
+    "max_df": 0.95,
+    "sublinear_tf": true,
+    "stop_words": "english"
+  },
+  "rf_params": {
+    "n_estimators": "300",
+    "max_depth": "None",
+    "min_samples_split": "5",
+    "min_samples_leaf": "2",
+    "max_features": "sqrt",
+    "class_weight": "balanced_subsample",
+    "n_jobs": "-1",
+    "random_state": "42"
+  },
+  "icd_accuracy": 0.01075,
+  "cpt_accuracy": 0.02075,
+  "icd_top3_accuracy": 0.027,
+  "cpt_top3_accuracy": 0.0565
+}

@@ -25,3 +25,8 @@ python-docx==1.1.2     # DOCX text extraction
 
 # ── Utilities ───────────────────────────────────────────────────────────────
 Werkzeug==3.0.3        # Part of Flask, listed explicitly for clarity
+
+# ── ML inference (Colab-trained ICD/CPT models) ─────────────────────────────
+scikit-learn==1.4.2
+joblib==1.4.2
+numpy==1.26.4
